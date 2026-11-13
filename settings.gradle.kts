@@ -13,4 +13,10 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "galaxywatch-faces"
-include(":watchface", ":wear", ":mobile")
+
+// Cada pasta em faces/ que tenha um build.gradle.kts vira um módulo :faces:<nome>.
+// Para criar um mostrador novo basta adicionar a pasta — não precisa editar este arquivo.
+file("faces").listFiles()
+    ?.filter { it.isDirectory && it.resolve("build.gradle.kts").exists() }
+    ?.sortedBy { it.name }
+    ?.forEach { include(":faces:${it.name}") }

@@ -1,0 +1,16 @@
+<resources>
+    <string name="watchface_name">Orange Digital</string>
+    <string name="slot_left">Complicação esquerda</string>
+    <string name="slot_right">Complicação direita</string>
+    <string name="slot_top">Complicação do topo (clima)</string>
+
+    <string name="cfg_accent">Cor</string>
+    <string name="color_orange">Laranja</string>
+    <string name="color_red">Vermelho</string>
+    <string name="color_yellow">Amarelo</string>
+    <string name="color_green">Verde</string>
+    <string name="color_cyan">Ciano</string>
+    <string name="color_blue">Azul</string>
+    <string name="color_pink">Rosa</string>
+    <string name="color_white">Branco</string>
+</resources>

@@ -1,76 +1,103 @@
-# Galaxy Watch Faces — "Classic Red"
+# Galaxy Watch Faces
 
-Projeto de estudo: um app Android que, instalado no celular, envia e instala um
-watch face (mostrador) no Galaxy Watch. O mostrador reproduz um relógio analógico
-creme com números finos (12/3/6/9 em vermelho), ponteiro de segundos vermelho,
-dia da semana, relógio digital com segundos, bateria e nascer/pôr do sol.
+Meus mostradores (watch faces) para o Galaxy Watch, todos no mesmo repositório.
+Cada mostrador é um APK independente no **Watch Face Format (WFF)** — sem código,
+só XML + imagens — instalado direto no relógio via `adb`.
 
-## Como funciona (3 peças)
+## Galeria de watch faces
+
+<!-- Para adicionar um mostrador: inclua uma nova célula <td> (3 por linha) usando o preview.png dele. -->
+<table>
+  <tr>
+    <td align="center" width="33%">
+      <img src="faces/classic/src/main/res/drawable-nodpi/preview.png" width="200" alt="Classic Red"><br>
+      <b>Classic Red</b><br>
+      <code>faces/classic</code><br>
+      <sub>Analógico creme, números finos (12/3/6/9 em vermelho), dia da semana, hora digital, bateria e nascer/pôr do sol</sub>
+    </td>
+    <td align="center" width="33%">
+      <img src="faces/orange-digital/src/main/res/drawable-nodpi/preview.png" width="200" alt="Orange Digital"><br>
+      <b>Orange Digital</b><br>
+      <code>faces/orange-digital</code><br>
+      <sub>Digital grande (horas brancas, minutos laranja), data, bateria e 3 complicações editáveis: clima (Samsung Weather), passos e batimentos</sub>
+    </td>
+  </tr>
+</table>
+
+## Estrutura
 
 ```
- CELULAR (:mobile)                        RELÓGIO (:wear)                    :watchface
- ┌───────────────────┐  Data Layer       ┌──────────────────────┐   Watch   ┌───────────────┐
- │ botão "Instalar"  │  (canal Bluetooth)│ InstallerService     │   Face    │ APK sem código│
- │ contém o APK do   │ ───────────────►  │ recebe APK + token   │   Push    │ res/raw/      │
- │ watch face + token│   token + APK     │ WatchFacePushManager │ ────────► │  watchface.xml│
- └───────────────────┘ ◄───────────────  │  .addWatchFace(...)  │           │ + PNGs        │
-        status                           └──────────────────────┘           └───────────────┘
+faces/
+  classic/                      ← um mostrador = uma pasta
+    build.gradle.kts            ← só a versão (versionCode/versionName)
+    art/generate_images.py      ← script que gera as imagens (opcional)
+    src/main/
+      AndroidManifest.xml
+      res/raw/watchface.xml     ← o desenho do mostrador (WFF)
+      res/xml/watch_face_info.xml
+      res/values/strings.xml    ← nome que aparece na galeria do relógio
+      res/drawable-nodpi/*.png  ← imagens + preview.png
+build.gradle.kts                ← configuração comum a todos os mostradores
+settings.gradle.kts             ← inclui automaticamente toda pasta em faces/
 ```
 
-| Módulo | O que é | Onde aprender |
-|---|---|---|
-| `watchface/` | O mostrador em si, no formato **Watch Face Format (WFF)**: um APK **sem código**, só XML + imagens. O relógio desenha tudo sozinho. | `watchface/src/main/res/raw/watchface.xml` (comentado) |
-| `wear/` | App do relógio. Recebe o APK pelo Data Layer e instala com a API **Watch Face Push** (Wear OS 6+). | `wear/.../InstallerService.kt`, `Installer.kt` |
-| `mobile/` | App do celular. Contém o APK do watch face dentro dos `assets` e o envia ao relógio. | `mobile/.../MainActivity.kt` |
-| `tools/generate_images.py` | Gera **todas as imagens** (mostrador, ponteiros, ícones, preview) com Python + Pillow. | rode `python3 tools/generate_images.py` |
+- O pacote vem do nome da pasta: `faces/classic` → `com.lsantos.watchfaces.classic`.
+- Toda pasta em `faces/` com um `build.gradle.kts` vira o módulo `:faces:<nome>`
+  sozinha, sem precisar registrar em lugar nenhum.
 
-### Detalhes importantes
-- **Regra de nome do pacote**: o watch face precisa se chamar
-  `<pacote do app do relógio>.watchfacepush.<nome>` →
-  `com.lsantos.watchmarket.watchfacepush.classic`.
-- **Token de validação**: a API Watch Face Push exige que o APK passe pelo validador
-  do Google. O build do `:mobile` roda o validador (`validator-push-cli`) e guarda o
-  token em `assets/watchface.token`; o celular manda token + APK, e o relógio usa o token.
-- O `watchface/build.gradle.kts` desliga a geração de `classes.dex` porque o validador
-  rejeita qualquer código no APK do watch face.
-- Os dois apps (`:mobile` e `:wear`) têm o **mesmo applicationId** — requisito do Data Layer.
+## Criar um mostrador novo
 
-## Compilar
+1. Copie uma pasta existente: `faces/classic` → `faces/meu-novo` (use letras minúsculas e `-`).
+2. Mude o nome em `src/main/res/values/strings.xml` (`watchface_name`).
+3. Edite `src/main/res/raw/watchface.xml` e troque as imagens em `res/drawable-nodpi/`
+   (inclusive `preview.png`, que aparece na galeria).
+4. Compile e instale (veja abaixo).
+5. Adicione o mostrador na [Galeria](#galeria-de-watch-faces) usando o `preview.png` dele.
 
-Requisitos: JDK 17+, Android SDK (plataformas 35/36), Python 3 + Pillow (só se for regerar imagens).
+Referência do formato: <https://developer.android.com/training/wearables/wff>
+
+## Conectar o relógio (adb sem fio)
+
+Precisa fazer só uma vez:
+1. No relógio, vá em Configurações → Sobre o relógio → Informações do software e toque
+   várias vezes em "Versão do software" até ativar o modo desenvolvedor.
+2. Vá em Opções do desenvolvedor e ative **Depuração ADB** e **Depurar por Wi‑Fi**.
+3. Em **Depurar por Wi‑Fi → Parear novo dispositivo**, rode no PC:
+   `adb pair IP:PORTA_PAREAMENTO` (digite o código mostrado no relógio).
+
+Sempre que for instalar algo:
 
 ```bash
-echo "sdk.dir=/caminho/do/Android/Sdk" > local.properties
-./gradlew :wear:assembleRelease :mobile:assembleRelease
+adb connect IP:PORTA          # IP:porta da tela "Depurar por Wi-Fi"
 ```
 
-Saídas:
-- `mobile/build/outputs/apk/release/mobile-release.apk` (celular)
-- `wear/build/outputs/apk/release/wear-release.apk` (relógio)
+## Compilar e instalar
+
+```bash
+# Se o celular também estiver conectado no adb, diga qual é o relógio:
+export ANDROID_SERIAL=IP:PORTA        # PowerShell: $env:ANDROID_SERIAL="IP:PORTA"
+
+./gradlew :faces:classic:installRelease   # um mostrador
+./gradlew installRelease                  # todos
+```
+
+Depois, toque e segure a tela do relógio e escolha o mostrador na galeria.
+Para atualizar um mostrador que já está instalado, basta rodar o mesmo comando
+(suba o `versionCode` se quiser controlar as versões).
+
+Só gerar os APKs: `./gradlew assembleRelease` → `faces/<nome>/build/outputs/apk/release/<nome>-release.apk`
+
+Remover um mostrador do relógio: `adb uninstall com.lsantos.watchfaces.<nome>`
+
+## Requisitos
+
+- Android SDK com a plataforma 36 (`local.properties` com `sdk.dir=...`; o Android Studio cria).
+- Qualquer JDK no `JAVA_HOME` para iniciar o Gradle. O build em si roda com **JDK 17**,
+  que o Gradle encontra sozinho (ver `gradle/gradle-daemon-jvm.properties`).
+- Relógio com Wear OS 5 ou superior (WFF v2).
+- Python 3 + Pillow, só se for regerar imagens com `art/generate_images.py`.
 
 > Se o Maven Central devolver erro 429, use um espelho:
 > `MAVEN_CENTRAL_MIRROR=https://maven-central.storage-download.googleapis.com/maven2/ ./gradlew ...`
 
-## Instalar
-
-1. **Celular**: instale `mobile-release.apk` (permita "fontes desconhecidas").
-2. **Relógio** (sem Play Store, via adb sem fio):
-   - Relógio: Configurações → Sobre o relógio → Informações do software → toque 5x em
-     "Versão do software"; depois Opções do desenvolvedor → Depuração ADB e Depuração Wi-Fi.
-   - PC: `adb pair IP:PORTA_PAREAMENTO` e `adb connect IP:PORTA`, então
-     `adb install wear/build/outputs/apk/release/wear-release.apk`
-3. Abra o app **Watch Faces** no relógio uma vez e conceda a permissão que ele pedir.
-4. Abra o app no celular e toque em **Instalar no relógio**.
-
-**Alternativa sem app (só para testar o desenho):**
-`adb install watchface/build/outputs/apk/release/watchface-release.apk` e escolha
-"Classic Red" na galeria de mostradores do relógio.
-
-## Limitações / honestidade
-- Foi **compilado e validado** com o validador oficial do Google, mas **não pôde ser
-  testado em um relógio real** neste ambiente. O desenho (posições/tamanhos no XML) pode
-  precisar de ajustes finos depois de ver no relógio.
-- Watch Face Push exige **Wear OS 6 ou superior**. No Wear OS 6 cada app tem **1 slot** de
-  watch face (instalar de novo atualiza o mesmo).
-- Os APKs são assinados com a chave *debug* (projeto de estudo). Para publicar na Play
-  Store é preciso uma chave própria.
+Os APKs são assinados com a chave *debug* (uso pessoal, não é para a Play Store).
