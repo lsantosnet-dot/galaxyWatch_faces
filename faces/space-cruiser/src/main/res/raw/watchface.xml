@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Space Cruiser — Watch Face Format v2.
+  Tela lógica 450x450. Fundo: nave + nebulosa (drawable/background, gerado por art/generate_images.py).
+  Fontes (art/build_fonts.py, a partir da Inter):
+    inter_regular = hora | inter_medium = valores | inter_caps = rótulos em MAIÚSCULAS (sem ".")
+  Posicionamento: caixa com altura = 1.21 x tamanho; topo das letras = y + 0.241 x tamanho.
+-->
+<WatchFace width="450" height="450">
+    <Metadata key="CLOCK_TYPE" value="DIGITAL" />
+    <Metadata key="PREVIEW_TIME" value="10:08:00" />
+
+    <Scene backgroundColor="#ff000000">
+
+        <!-- Fundo. Some no modo ambiente (tela sempre ligada) para poupar bateria e a tela. -->
+        <PartImage x="0" y="0" width="450" height="450">
+            <Variant mode="AMBIENT" target="alpha" value="0" />
+            <Image resource="background" />
+        </PartImage>
+
+        <!-- ============================ hora e data ============================ -->
+        <DigitalClock x="0" y="19" width="450" height="126">
+            <TimeText format="h:mm" hourFormat="SYNC_TO_DEVICE" align="CENTER" x="0" y="0" width="450" height="126">
+                <Font family="inter_regular" size="104" color="#ffffffff" />
+            </TimeText>
+        </DigitalClock>
+
+        <!-- "QUI • 14 NOV" (a fonte inter_caps transforma "qui." em "QUI") -->
+        <PartText x="75" y="128" width="300" height="26">
+            <Text align="CENTER">
+                <Font family="inter_caps" size="21" color="#ffe4e7f0">
+                    <Template>%s • %d %s<Parameter expression="[DAY_OF_WEEK_S]" /><Parameter expression="[DAY]" /><Parameter expression="[MONTH_S]" /></Template>
+                </Font>
+            </Text>
+        </PartText>
+
+        <!-- ======================= complicações (editáveis) =======================
+             Troque no relógio (toque e segure > Personalizar) ou no Galaxy Wearable. -->
+
+        <!-- Esquerda (padrão: passos): ícone num círculo, título e valor em azul-claro -->
+        <ComplicationSlot slotId="0" name="LEFT" displayName="@string/slot_left"
+                          supportedTypes="SHORT_TEXT"
+                          x="10" y="164" width="104" height="104">
+            <DefaultProviderPolicy defaultSystemProvider="STEP_COUNT"
+                                   defaultSystemProviderType="SHORT_TEXT" />
+            <BoundingBox x="0" y="0" width="104" height="104" />
+            <Complication type="SHORT_TEXT">
+                <PartDraw x="0" y="0" width="104" height="50">
+                    <Ellipse x="30" y="2" width="44" height="44">
+                        <Fill color="#cc1c2230" />
+                        <Stroke color="#40ffffff" thickness="1" />
+                    </Ellipse>
+                </PartDraw>
+                <PartImage x="39" y="11" width="26" height="26">
+                    <Image resource="[COMPLICATION.MONOCHROMATIC_IMAGE]" />
+                </PartImage>
+                <PartText x="0" y="51" width="104" height="16">
+                    <Text align="CENTER">
+                        <Font family="inter_caps" size="13" color="#ffb4c8dc">
+                            <Template>%s<Parameter expression="[COMPLICATION.TITLE]" /></Template>
+                        </Font>
+                    </Text>
+                </PartText>
+                <PartText x="0" y="65" width="104" height="36">
+                    <Text align="CENTER">
+                        <Font family="inter_medium" size="30" color="#ffa8dbff">
+                            <Template>%s<Parameter expression="[COMPLICATION.TEXT]" /></Template>
+                        </Font>
+                    </Text>
+                </PartText>
+            </Complication>
+        </ComplicationSlot>
+
+        <!-- Direita (padrão: Samsung Weather): ícone, título e valor em laranja-claro -->
+        <ComplicationSlot slotId="1" name="RIGHT" displayName="@string/slot_right"
+                          supportedTypes="SHORT_TEXT"
+                          x="336" y="164" width="104" height="104">
+            <DefaultProviderPolicy
+                primaryProvider="com.samsung.android.watch.weather/com.samsung.android.watch.weather.complication.WeatherComplicationService"
+                primaryProviderType="SHORT_TEXT"
+                defaultSystemProvider="SUNRISE_SUNSET"
+                defaultSystemProviderType="SHORT_TEXT" />
+            <BoundingBox x="0" y="0" width="104" height="104" />
+            <Complication type="SHORT_TEXT">
+                <PartImage x="34" y="6" width="36" height="36">
+                    <Image resource="[COMPLICATION.MONOCHROMATIC_IMAGE]" />
+                </PartImage>
+                <PartText x="0" y="51" width="104" height="16">
+                    <Text align="CENTER">
+                        <Font family="inter_caps" size="13" color="#ffe6d6c0">
+                            <Template>%s<Parameter expression="[COMPLICATION.TITLE]" /></Template>
+                        </Font>
+                    </Text>
+                </PartText>
+                <PartText x="0" y="65" width="104" height="36">
+                    <Text align="CENTER">
+                        <Font family="inter_medium" size="30" color="#ffffc37a">
+                            <Template>%s<Parameter expression="[COMPLICATION.TEXT]" /></Template>
+                        </Font>
+                    </Text>
+                </PartText>
+            </Complication>
+        </ComplicationSlot>
+
+        <!-- Embaixo (padrão: bateria do relógio): ícone + valor numa linha, título embaixo -->
+        <ComplicationSlot slotId="2" name="BOTTOM" displayName="@string/slot_bottom"
+                          supportedTypes="SHORT_TEXT"
+                          x="165" y="396" width="120" height="42">
+            <DefaultProviderPolicy defaultSystemProvider="WATCH_BATTERY"
+                                   defaultSystemProviderType="SHORT_TEXT" />
+            <BoundingBox x="0" y="0" width="120" height="42" />
+            <Complication type="SHORT_TEXT">
+                <PartImage x="30" y="3" width="18" height="18">
+                    <Image resource="[COMPLICATION.MONOCHROMATIC_IMAGE]" />
+                </PartImage>
+                <PartText x="52" y="0" width="68" height="24">
+                    <Text align="START">
+                        <Font family="inter_medium" size="18" color="#ffe4e7f0">
+                            <Template>%s<Parameter expression="[COMPLICATION.TEXT]" /></Template>
+                        </Font>
+                    </Text>
+                </PartText>
+                <PartText x="0" y="24" width="120" height="14">
+                    <Text align="CENTER">
+                        <Font family="inter_caps" size="11" color="#ffb4bccc">
+                            <Template>%s<Parameter expression="[COMPLICATION.TITLE]" /></Template>
+                        </Font>
+                    </Text>
+                </PartText>
+            </Complication>
+        </ComplicationSlot>
+    </Scene>
+</WatchFace>
