@@ -42,8 +42,8 @@ def make_preview(bg):
         else:
             d.text((x * SS, base), txt, font=f, fill=color, anchor="ls")
 
-    text(0, 19, 450, 104, "10:08", "#ffffff", "inter_regular")
-    text(75, 128, 300, 21, "qui. • 14 nov.", "#e4e7f0", "inter_caps")
+    text(0, 36, 450, 104, "10:08", "#ffffff", "inter_regular")
+    text(75, 145, 300, 21, "qui. • 14 nov.", "#e4e7f0", "inter_caps")
 
     # esquerda: passos
     ox, oy = 10, 164
@@ -63,7 +63,7 @@ def make_preview(bg):
     text(ox, oy + 65, 104, 30, "24°", "#ffc37a", "inter_medium")
 
     # embaixo: bateria
-    ox, oy = 165, 396
+    ox, oy = 165, 366
     d.rounded_rectangle([(ox + 30) * SS, (oy + 7) * SS, (ox + 46) * SS, (oy + 16) * SS],
                         radius=2 * SS, outline="#7ee081", width=SS)
     d.rectangle([(ox + 32) * SS, (oy + 9) * SS, (ox + 42) * SS, (oy + 14) * SS], fill="#7ee081")

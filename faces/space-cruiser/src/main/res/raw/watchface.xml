@@ -19,14 +19,14 @@
         </PartImage>
 
         <!-- ============================ hora e data ============================ -->
-        <DigitalClock x="0" y="19" width="450" height="126">
+        <DigitalClock x="0" y="36" width="450" height="126">
             <TimeText format="h:mm" hourFormat="SYNC_TO_DEVICE" align="CENTER" x="0" y="0" width="450" height="126">
                 <Font family="inter_regular" size="104" color="#ffffffff" />
             </TimeText>
         </DigitalClock>
 
         <!-- "QUI • 14 NOV" (a fonte inter_caps transforma "qui." em "QUI") -->
-        <PartText x="75" y="128" width="300" height="26">
+        <PartText x="75" y="145" width="300" height="26">
             <Text align="CENTER">
                 <Font family="inter_caps" size="21" color="#ffe4e7f0">
                     <Template>%s • %d %s<Parameter expression="[DAY_OF_WEEK_S]" /><Parameter expression="[DAY]" /><Parameter expression="[MONTH_S]" /></Template>
@@ -105,7 +105,7 @@
         <!-- Embaixo (padrão: bateria do relógio): ícone + valor numa linha, título embaixo -->
         <ComplicationSlot slotId="2" name="BOTTOM" displayName="@string/slot_bottom"
                           supportedTypes="SHORT_TEXT"
-                          x="165" y="396" width="120" height="42">
+                          x="165" y="366" width="120" height="42">
             <DefaultProviderPolicy defaultSystemProvider="WATCH_BATTERY"
                                    defaultSystemProviderType="SHORT_TEXT" />
             <BoundingBox x="0" y="0" width="120" height="42" />
