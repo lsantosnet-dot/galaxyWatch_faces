@@ -33,7 +33,7 @@ só XML + imagens — instalado direto no relógio via `adb`.
       <img src="faces/green-diver/src/main/res/drawable-nodpi/preview.png" width="200" alt="Green Diver"><br>
       <b>Green Diver</b><br>
       <code>faces/green-diver</code><br>
-      <sub>Analógico estilo relógio de mergulho: luneta de 60 min, índices de lume, janela de dia/data às 3h e bateria. Mostrador em 3 verdes e luneta preta ou verde (Personalizar)</sub>
+      <sub>Analógico realista estilo relógio de mergulho (aço, lume e sombras): luneta de 60 min, índices de lume, janela de dia/data às 3h e bateria. Mostrador em 3 verdes e luneta preta ou verde (Personalizar)</sub>
     </td>
   </tr>
 </table>

@@ -1,379 +1,541 @@
 #!/usr/bin/env python3
-"""Gera todas as imagens do watch face Green Diver.
+"""Gera todas as imagens do watch face Green Diver (v2, visual realista).
 
 Uso:  python3 faces/green-diver/art/generate_images.py
 Saída: faces/green-diver/src/main/res/drawable-nodpi/*.png
+Requer: Pillow e numpy (pip install pillow numpy).
 
-Camadas (de baixo para cima), todas 450x450 exceto os ponteiros:
-  dial_<cor>.png     mostrador verde raio de sol (3 cores, escolhidas no relógio)
-  bezel_<cor>.png    luneta de 60 minutos + anel de aço (2 cores)
-  markers.png        trilha de minutos, índices de lume, moldura da janela dia/data e textos fixos
-  aod_markers.png    índices brilhando em verde para o modo ambiente
-  *_hand.png         ponteiros (aod_*_hand.png = versões do modo ambiente)
-  preview.png        imagem da galeria (10:08:34)
+Coordenadas lógicas 450x450, as mesmas do watchface.xml. As imagens saem em 2x
+(900 px) para ficarem nítidas em telas maiores; o XML continua usando 450.
+A luz vem do canto superior esquerdo: chanfros, brilhos e sombras seguem essa direção.
 
-Tudo é desenhado com Pillow em 4x de resolução e reduzido (supersampling).
+Camadas (de baixo para cima):
+  dial_<cor>.png              mostrador raio de sol (floresta, esmeralda, oliva)
+  bezel_<cor>.png             luneta de 60 min + anel de aço (preta, verde)
+  markers.png                 trilha de minutos, índices aplicados, janela dia/data, textos fixos
+  *_hand_shadow.png           sombras dos ponteiros (giram deslocadas 4,5 px no XML)
+  *_hand.png                  ponteiros de aço facetado com lume
+  glass.png                   reflexo suave do vidro (por cima de tudo)
+  aod_markers.png, aod_*_hand.png   modo ambiente
+  preview.png                 imagem da galeria (10:08:34)
 """
 import math
 import os
-import random
 
-from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
+import numpy as np
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
+K = 2            # escala de saída (450 -> 900)
+SS = 2           # supersampling
+U = K * SS       # pixels de trabalho por unidade lógica
 SIZE = 450
-SS = 4
 C = SIZE / 2
+N = SIZE * U     # lado do canvas de trabalho
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 RES = os.path.join(HERE, "..", "src", "main", "res")
 OUT = os.path.join(RES, "drawable-nodpi")
+FONTS = os.path.join(HERE, "fonts")
+FONT_WINDOW = os.path.join(RES, "font", "barlow_condensed_bold.ttf")   # mesma fonte do XML
+FONT_BEZEL = os.path.join(FONTS, "BarlowCondensed-SemiBold.ttf")
+FONT_TITLE = os.path.join(FONTS, "Archivo-Bold.ttf")
 os.makedirs(OUT, exist_ok=True)
 
-FONT_BEZEL = os.path.join(HERE, "fonts", "BarlowCondensed-SemiBold.ttf")
-FONT_TITLE = os.path.join(HERE, "fonts", "Archivo-Bold.ttf")
-FONT_WINDOW = os.path.join(RES, "font", "barlow_condensed_bold.ttf")  # mesma fonte usada no XML
+LX, LY = -0.70710678, -0.70710678       # direção de onde vem a luz (cima-esquerda)
+RNG = np.random.default_rng(7)
 
-# cores
-DIALS = {                      # cor base do mostrador (RGB)
-    "floresta": (31, 80, 57),
-    "esmeralda": (15, 92, 75),
-    "oliva": (67, 76, 42),
-}
-BEZELS = {"preta": (17, 21, 19), "verde": (22, 58, 42)}
-LUME = (238, 243, 226, 255)        # lume de dia (branco esverdeado)
-LUME_AOD = (125, 255, 176, 255)    # lume brilhando no escuro
-STEEL = (207, 214, 209, 255)
-STEEL_DARK = (89, 98, 92, 255)
-PRINT = (232, 238, 230, 255)       # tinta branca da luneta e do mostrador
-ORANGE = (255, 106, 61, 255)
-
-# janela dia/data às 3h (precisa bater com o watchface.xml)
-WIN_X, WIN_Y, WIN_W, WIN_H, WIN_SPLIT = 314, 211, 74, 28, 44
+DIALS = {"floresta": (0.115, 0.330, 0.225), "esmeralda": (0.055, 0.370, 0.300), "oliva": (0.270, 0.305, 0.160)}
+BEZELS = {"preta": (0.070, 0.082, 0.076), "verde": (0.075, 0.215, 0.150)}
+STEEL = np.array([0.80, 0.83, 0.81])
+LUME = np.array([0.905, 0.925, 0.835])       # creme esverdeado (lume envelhecido)
+PRINT = np.array([0.90, 0.93, 0.89])
+ORANGE = np.array([1.0, 0.40, 0.20])
+LUME_AOD = (125, 255, 176)
 
 
-def S(v):
-    return v * SS
+# ------------------------------------------------------------------ utilidades
+def P(v):
+    return v * U
 
 
-def save(img, name, downscale=True):
-    if downscale:
-        img = img.resize((img.width // SS, img.height // SS), Image.LANCZOS)
-    img.save(os.path.join(OUT, name))
-    print("gerado", name, img.size)
-    return img
+def mask_new(w=N, h=N):
+    return Image.new("L", (w, h), 0)
 
 
-def polar(r, deg, cx=C, cy=C):
-    """Ponto (em pixels supersampled) a r do centro; 0° = 12h, sentido horário."""
+def arr(m):
+    return np.asarray(m, dtype=np.float32) / 255.0
+
+
+def blur(a, r):
+    """Desfoque gaussiano de um array 0..1 (raio em unidades lógicas)."""
+    im = Image.fromarray(np.clip(a * 255, 0, 255).astype(np.uint8))
+    return arr(im.filter(ImageFilter.GaussianBlur(r * U)))
+
+
+def blur_f(a, r):
+    """Desfoque com precisão (usa modo F)."""
+    sigma = r * U
+    rad = max(1, int(round(math.sqrt(12 * sigma * sigma / 3 + 1) / 2)))   # 3 caixas ~ gaussiana
+
+    def box(x, axis):
+        pad = [(0, 0)] * x.ndim
+        pad[axis] = (rad + 1, rad)
+        c = np.cumsum(np.pad(x, pad, mode="edge"), axis=axis, dtype=np.float64)
+        hi = np.take(c, range(2 * rad + 1, c.shape[axis]), axis=axis)
+        lo = np.take(c, range(0, c.shape[axis] - 2 * rad - 1), axis=axis)
+        return ((hi - lo) / (2 * rad + 1)).astype(np.float32)
+
+    out = a.astype(np.float32)
+    for _ in range(3):
+        out = box(box(out, 0), 1)
+    return out
+
+
+def bevel(mask, r):
+    """Iluminação de um chanfro: >0 nas bordas viradas para a luz, <0 nas opostas."""
+    h = blur_f(mask, r)
+    gy, gx = np.gradient(h)
+    s = -(gx * LX + gy * LY) * (r * U * 2.5)
+    return np.clip(s, -1, 1)
+
+
+def offset(a, dx, dy):
+    out = np.zeros_like(a)
+    dx, dy = int(round(P(dx))), int(round(P(dy)))
+    h, w = a.shape[:2]
+    out[max(dy, 0):h + min(dy, 0), max(dx, 0):w + min(dx, 0)] = a[max(-dy, 0):h - max(dy, 0), max(-dx, 0):w - max(dx, 0)]
+    return out
+
+
+def noise(shape, r, amp):
+    n = RNG.standard_normal(shape).astype(np.float32)
+    if r:
+        n = blur_f(n, r)
+        n /= (n.std() + 1e-6)
+    return n * amp
+
+
+class Layer:
+    """Acumulador RGBA em float (composição 'over')."""
+
+    def __init__(self, w=N, h=N):
+        self.rgb = np.zeros((h, w, 3), np.float32)
+        self.a = np.zeros((h, w), np.float32)
+
+    def over(self, rgb, a):
+        a = np.clip(a, 0, 1)
+        rgb = np.broadcast_to(np.asarray(rgb, np.float32), self.rgb.shape)
+        na = a + self.a * (1 - a)
+        self.rgb = (rgb * a[..., None] + self.rgb * (self.a * (1 - a))[..., None]) / np.maximum(na, 1e-6)[..., None]
+        self.a = na
+
+    def image(self, out_scale=True):
+        rgba = np.dstack([np.clip(self.rgb, 0, 1), np.clip(self.a, 0, 1)])
+        im = Image.fromarray((rgba * 255 + 0.5).astype(np.uint8), "RGBA")
+        if out_scale:
+            im = im.resize((im.width // SS, im.height // SS), Image.LANCZOS)
+        return im
+
+
+def save(im, name):
+    im.save(os.path.join(OUT, name))
+    print("gerado", name, im.size)
+
+
+def grid(w=N, h=N, cx=C, cy=C):
+    ys, xs = np.mgrid[0:h, 0:w].astype(np.float32)
+    dx = (xs + 0.5) / U - cx
+    dy = (ys + 0.5) / U - cy
+    r = np.hypot(dx, dy)
+    ang = np.arctan2(dx, -dy)          # 0 = 12h, horário
+    return dx, dy, r, ang
+
+
+DX, DY, R, ANG = grid()
+
+
+def circle(cx, cy, r, w=N, h=N):
+    m = mask_new(w, h)
+    ImageDraw.Draw(m).ellipse([P(cx - r), P(cy - r), P(cx + r), P(cy + r)], fill=255)
+    return arr(m)
+
+
+def poly(pts, w=N, h=N):
+    m = mask_new(w, h)
+    ImageDraw.Draw(m).polygon([(P(x), P(y)) for x, y in pts], fill=255)
+    return arr(m)
+
+
+def rrect(x0, y0, x1, y1, rad, w=N, h=N):
+    m = mask_new(w, h)
+    ImageDraw.Draw(m).rounded_rectangle([P(x0), P(y0), P(x1), P(y1)], radius=P(rad), fill=255)
+    return arr(m)
+
+
+def polar(r, deg):
     a = math.radians(deg)
-    return (S(cx + r * math.sin(a)), S(cy - r * math.cos(a)))
+    return C + r * math.sin(a), C - r * math.cos(a)
 
 
-def canvas():
-    return Image.new("RGBA", (S(SIZE), S(SIZE)), (0, 0, 0, 0))
+def metal(mask, r=1.2, base=STEEL, env=None, spec=0.55):
+    """Aço polido: chanfro + brilho especular + reflexo do ambiente."""
+    s = bevel(mask, r)
+    c = base[None, None, :] * (0.78 + 0.42 * s[..., None])
+    c = c + spec * np.clip(s, 0, 1)[..., None] ** 3
+    if env is not None:
+        c = c + env[..., None]
+    return np.clip(c, 0, 1)
 
 
-def circle_mask(r_out, r_in=0):
-    m = Image.new("L", (S(SIZE), S(SIZE)), 0)
-    d = ImageDraw.Draw(m)
-    d.ellipse([S(C - r_out), S(C - r_out), S(C + r_out), S(C + r_out)], fill=255)
-    if r_in:
-        d.ellipse([S(C - r_in), S(C - r_in), S(C + r_in), S(C + r_in)], fill=0)
-    return m
+def lume_fill(mask, color=LUME):
+    """Lume rebaixado: borda de cima/esquerda na sombra, textura granulada."""
+    s = bevel(mask, 0.9)
+    tex = noise(mask.shape, 0.25, 0.010)
+    k = 1.0 + 0.10 * (-s) * (s < 0) - 0.22 * np.clip(s, 0, 1) + tex
+    return np.clip(color[None, None, :] * k[..., None], 0, 1)
 
 
-def shadow_of(layer, dx=2, dy=3, blur=2.2, opacity=0.55):
-    """Sombra projetada (para elementos fixos: índices, janela)."""
-    a = layer.getchannel("A").point(lambda v: int(v * opacity))
-    sh = Image.new("RGBA", layer.size, (0, 0, 0, 0))
-    sh.putalpha(a)
-    sh = sh.filter(ImageFilter.GaussianBlur(S(blur)))
-    out = Image.new("RGBA", layer.size, (0, 0, 0, 0))
-    out.alpha_composite(sh, (S(dx), S(dy)))
-    return out
+def drop_shadow(layer, mask, dx=1.8, dy=2.6, r=1.8, op=0.55):
+    sh = offset(blur(mask, r), dx, dy) * op
+    layer.over((0, 0, 0), sh)
 
 
-def glow(layer, radius=3, strength=1.0):
-    """Brilho em volta (modo ambiente)."""
-    g = layer.filter(ImageFilter.GaussianBlur(S(radius)))
-    if strength != 1.0:
-        g.putalpha(g.getchannel("A").point(lambda v: min(255, int(v * strength))))
-    out = Image.new("RGBA", layer.size, (0, 0, 0, 0))
-    out.alpha_composite(g)
-    out.alpha_composite(layer)
-    return out
-
-
-# ---------------------------------------------------------------- mostrador
+# ------------------------------------------------------------------ mostrador
 R_DIAL = 185
 
 
 def make_dial(name, base):
-    """Raio de sol: o brilho varia com o ângulo (2 faixas claras em diagonal)."""
-    random.seed(11)
-    n = SIZE  # resolução final direto (sem supersampling: é um gradiente suave)
-    img = Image.new("RGB", (n, n))
-    px = img.load()
-    # ruído fino por ângulo simula o escovado radial
-    grain = [random.uniform(-0.025, 0.025) for _ in range(1440)]
-    for y in range(n):
-        for x in range(n):
-            dx, dy = x + 0.5 - C, y + 0.5 - C
-            r = math.hypot(dx, dy)
-            ang = math.atan2(dx, -dy)                 # 0 = 12h, horário
-            b = 0.5 + 0.5 * math.cos(2 * (ang - math.radians(315)))
-            k = 0.72 + 0.62 * b ** 1.6 + grain[int((ang % (2 * math.pi)) / (2 * math.pi) * 1440) % 1440]
-            # vinheta: escurece perto da borda
-            t = max(0.0, (r / R_DIAL - 0.55) / 0.45)
-            k *= 1 - 0.55 * t ** 1.4
-            px[x, y] = tuple(max(0, min(255, int(c * k))) for c in base)
-    img = img.convert("RGBA")
-    mask = circle_mask(R_DIAL + 1).resize((n, n), Image.LANCZOS)
-    img.putalpha(mask)
-    img.save(os.path.join(OUT, name))
-    print("gerado", name, img.size)
+    base = np.array(base, np.float32)
+    b = 0.5 + 0.5 * np.cos(2 * (ANG - math.radians(315)))
+    bins = 7200
+    streak = RNG.standard_normal(bins).astype(np.float32)
+    streak = np.convolve(np.concatenate([streak[-3:], streak, streak[:3]]), np.ones(7) / 7, "same")[3:-3]
+    idx = ((ANG % (2 * np.pi)) / (2 * np.pi) * bins).astype(int) % bins
+    k = 0.60 + 0.85 * b ** 2.4
+    k = k * (1 + streak[idx] * 0.07 * (0.35 + b)) + noise(ANG.shape, 0, 0.008)
+    t = np.clip((R / R_DIAL - 0.50) / 0.50, 0, 1)
+    k *= 1 - 0.50 * t ** 1.5
+    # sombra que o anel de minutos projeta na borda do mostrador (luz de cima-esquerda)
+    rim = np.clip(1 - (R_DIAL - R) / 7, 0, 1) ** 2
+    lit = 0.5 + 0.5 * np.cos(ANG - math.radians(315))
+    k *= 1 - rim * (0.25 + 0.35 * lit)
+    rgb = base[None, None, :] * k[..., None]
+    hi = np.clip(k - 1.0, 0, None)[..., None] * np.array([0.10, 0.12, 0.05])
+    rgb = np.clip(rgb + hi, 0, 1)
+    L = Layer()
+    L.over(rgb, circle(C, C, R_DIAL + 0.5))
+    save(L.image(), name)
 
 
 # ------------------------------------------------------------------ luneta
-def make_bezel(name, color):
-    img = canvas()
-    d = ImageDraw.Draw(img)
-    d.ellipse([0, 0, S(SIZE) - 1, S(SIZE) - 1], fill=color + (255,))
-    d.ellipse([S(1), S(1), S(SIZE - 1), S(SIZE - 1)], outline=(44, 51, 47, 255), width=S(2))
+def text_mask(text, font, cx, cy, deg=0, spacing=0, anchor="mm"):
+    m = mask_new()
+    d = ImageDraw.Draw(m)
+    if spacing:
+        widths = [d.textlength(ch, font=font) for ch in text]
+        total = sum(widths) + P(spacing) * (len(text) - 1)
+        x = P(cx) - total / 2
+        for ch, w in zip(text, widths):
+            d.text((x, P(cy)), ch, font=font, fill=255, anchor="ls")
+            x += w + P(spacing)
+    else:
+        d.text((P(cx), P(cy)), text, font=font, fill=255, anchor=anchor)
+    if deg:
+        m = m.rotate(-deg, resample=Image.BICUBIC, center=(P(cx), P(cy)))
+    return arr(m)
 
-    font = ImageFont.truetype(FONT_BEZEL, S(25))
+
+def make_bezel(name, base):
+    base = np.array(base, np.float32)
+    lit = 0.5 + 0.5 * np.cos(ANG - math.radians(315))
+    conc = noise((1, 4000), 0, 1)[0]
+    ridx = np.clip((R * 8).astype(int), 0, 3999)
+    k = 0.80 + 0.55 * lit ** 3 + conc[ridx] * 0.025
+    insert = base[None, None, :] * k[..., None] + (0.06 * lit ** 6)[..., None]
+    ring_out = circle(C, C, 225)
+    ring_in = circle(C, C, 190.5)
+    L = Layer()
+    L.over(np.clip(insert, 0, 1), ring_out - ring_in)
+
+    # marcas e números (tinta levemente em relevo)
+    marks = mask_new()
+    d = ImageDraw.Draw(marks)
     for i in range(1, 60):
         deg = i * 6
         if i % 10 == 0:
-            # número girado acompanhando o anel (o 30 fica de cabeça para baixo)
-            t = Image.new("RGBA", (S(40), S(34)), (0, 0, 0, 0))
-            ImageDraw.Draw(t).text((S(20), S(17)), str(i), font=font, fill=PRINT, anchor="mm")
-            t = t.rotate(-deg, resample=Image.BICUBIC, expand=True)
-            cx, cy = polar(205, deg)
-            img.alpha_composite(t, (int(cx - t.width / 2), int(cy - t.height / 2)))
-        elif i % 5 == 0:
-            d.line([polar(212, deg), polar(197, deg)], fill=PRINT, width=S(5))
+            continue
+        if i % 5 == 0:
+            p1, p2 = polar(212, deg), polar(197, deg)
+            d.line([(P(p1[0]), P(p1[1])), (P(p2[0]), P(p2[1]))], fill=255, width=P(5))
         elif i < 15:
-            d.line([polar(211, deg), polar(201, deg)], fill=PRINT, width=int(S(1.8)))
+            p1, p2 = polar(211, deg), polar(201, deg)
+            d.line([(P(p1[0]), P(p1[1])), (P(p2[0]), P(p2[1]))], fill=255, width=int(P(1.8)))
+    m = arr(marks)
+    font = ImageFont.truetype(FONT_BEZEL, P(25))
+    for i in range(10, 60, 10):
+        x, y = polar(205, i * 6)
+        m = np.maximum(m, text_mask(str(i), font, x, y, i * 6))
+    tri = poly([(C - 15, 6), (C + 15, 6), (C, 31)])
+    m = np.maximum(m, tri)
+    s = bevel(m, 0.5)
+    paint = PRINT[None, None, :] * (0.93 + 0.10 * s[..., None])
+    L.over(paint, m)
 
-    # triângulo às 12 com ponto de lume
-    d.polygon([(S(C - 15), S(6)), (S(C + 15), S(6)), (S(C), S(31))], fill=PRINT)
-    d.ellipse([S(C - 4.2), S(15 - 4.2), S(C + 4.2), S(15 + 4.2)], fill=LUME, outline=STEEL_DARK, width=S(1))
+    # ponto de lume no triângulo, com aro de metal
+    pip_o, pip_i = circle(C, 15, 4.6), circle(C, 15, 3.4)
+    L.over(metal(pip_o, 0.6), pip_o)
+    L.over(lume_fill(pip_i), pip_i)
 
-    # anel de aço entre a luneta e o mostrador
-    d.ellipse([S(C - 189), S(C - 189), S(C + 189), S(C + 189)], outline=STEEL, width=S(3))
-    d.ellipse([S(C - 186), S(C - 186), S(C + 186), S(C + 186)], outline=(0, 0, 0, 128), width=S(1))
+    # anel de aço polido entre a luneta e o mostrador
+    steel_ring = circle(C, C, 190.5) - circle(C, C, 185.5)
+    env = 0.22 * np.cos(ANG - math.radians(315)) - 0.05
+    L.over(metal(steel_ring, 1.0, env=env, spec=0.35), steel_ring)
+    # borda externa escura (encontro com a caixa)
+    L.over((0, 0, 0), np.clip((R - 222.5) / 2.5, 0, 1) * ring_out * 0.8)
+    save(L.image(), name)
 
-    # centro transparente (o mostrador fica por baixo)
-    a = ImageChops.multiply(img.getchannel("A"), circle_mask(226, 185.5))
-    img.putalpha(a)
-    save(img, name)
+
+# ------------------------------------------------- índices, trilha e janela
+# janela de dia/data às 3h (os PartText do watchface.xml ficam dentro dela)
+WIN_X, WIN_Y, WIN_W, WIN_H, WIN_SPLIT = 300, 208.5, 88, 33, 52
 
 
-# ---------------------------------------------------- índices (dia e AOD)
-def draw_indices(d, fill, ring, ring_w=2.5):
-    rw = int(S(ring_w)) if ring else 0
+def index_shapes():
+    """(máscara_metal, máscara_lume) de todos os índices aplicados."""
+    metal_m = np.zeros((N, N), np.float32)
+    lume_m = np.zeros((N, N), np.float32)
     for h in range(12):
         deg = h * 30
         if h == 3:
-            continue  # janela de dia/data
+            continue
         if h == 0:
-            d.polygon([(S(C - 15), S(50)), (S(C + 15), S(50)), (S(C + 10), S(92)), (S(C - 10), S(92))],
-                      fill=fill, outline=ring, width=rw)
+            o = poly([(C - 16.5, 48.5), (C + 16.5, 48.5), (C + 11, 93.5), (C - 11, 93.5)])
+            i = poly([(C - 13, 51.5), (C + 13, 51.5), (C + 8.6, 90.5), (C - 8.6, 90.5)])
         elif h in (6, 9):
-            # bastão: desenhado em pé às 12 e girado depois (ver make_markers)
-            pass
+            o = rrect(C - 10.5, 50.5, C + 10.5, 93.5, 2.5)
+            i = rrect(C - 7.5, 53.5, C + 7.5, 90.5, 1.5)
+            o = arr(Image.fromarray((o * 255).astype(np.uint8)).rotate(-deg, Image.BICUBIC, center=(P(C), P(C))))
+            i = arr(Image.fromarray((i * 255).astype(np.uint8)).rotate(-deg, Image.BICUBIC, center=(P(C), P(C))))
         else:
-            cx, cy = polar(150, deg)
-            d.ellipse([cx - S(13), cy - S(13), cx + S(13), cy + S(13)], fill=fill, outline=ring, width=rw)
-
-
-def baton(fill, ring, ring_w=2.5):
-    """Bastão das 6 e 9 desenhado às 12, para girar em volta do centro."""
-    lay = canvas()
-    ImageDraw.Draw(lay).rounded_rectangle([S(C - 9), S(52), S(C + 9), S(92)], radius=S(2), fill=fill,
-                                          outline=ring, width=int(S(ring_w)) if ring else 0)
-    return lay
+            x, y = polar(150, deg)
+            o, i = circle(x, y, 14.2), circle(x, y, 11.0)
+        metal_m = np.maximum(metal_m, o)
+        lume_m = np.maximum(lume_m, i)
+    return metal_m, lume_m
 
 
 def make_markers():
-    img = canvas()
-    d = ImageDraw.Draw(img)
-
-    # trilha de minutos
+    L = Layer()
+    # trilha de minutos impressa
+    tr = mask_new()
+    d = ImageDraw.Draw(tr)
     for i in range(60):
         deg = i * 6
-        long = i % 5 == 0
-        col = PRINT[:3] + ((242,) if long else (178,))
-        d.line([polar(181, deg), polar(171 if long else 175, deg)], fill=col, width=int(S(2.2 if long else 1.2)))
+        lng = i % 5 == 0
+        p1, p2 = polar(181.5, deg), polar(171 if lng else 175.5, deg)
+        d.line([(P(p1[0]), P(p1[1])), (P(p2[0]), P(p2[1]))], fill=255 if lng else 190, width=int(P(2.2 if lng else 1.1)))
+    L.over(PRINT, arr(tr) * 0.95)
 
-    # textos fixos
-    title = ImageFont.truetype(FONT_TITLE, S(15))
-    sub = ImageFont.truetype(FONT_BEZEL, S(12))
-    spaced_text(d, (S(C), S(128)), "GREEN DIVER", title, (238, 242, 234, 255), S(3))
-    spaced_text(d, (S(C), S(145)), "AUTOMATIC", sub, (207, 216, 207, 220), S(2.5))
+    title = ImageFont.truetype(FONT_TITLE, P(15))
+    sub = ImageFont.truetype(FONT_BEZEL, P(12))
+    L.over(PRINT, text_mask("GREEN DIVER", title, C, 128, spacing=3))
+    L.over(PRINT * 0.92, text_mask("AUTOMATIC", sub, C, 145, spacing=2.5) * 0.9)
 
-    # índices + moldura da janela, com sombra
-    raised = canvas()
-    rd = ImageDraw.Draw(raised)
-    draw_indices(rd, LUME, STEEL)
-    for deg in (180, 270):
-        b = baton(LUME, STEEL).rotate(-deg, resample=Image.BICUBIC, center=(S(C), S(C)))
-        raised.alpha_composite(b)
-    rd.rounded_rectangle([S(WIN_X - 3), S(WIN_Y - 3), S(WIN_X + WIN_W + 3), S(WIN_Y + WIN_H + 3)],
-                         radius=S(3), fill=STEEL, outline=STEEL_DARK, width=S(1))
-    rd.rounded_rectangle([S(WIN_X), S(WIN_Y), S(WIN_X + WIN_W), S(WIN_Y + WIN_H)], radius=S(1.5),
-                         fill=(247, 247, 242, 255))
-    rd.line([(S(WIN_X + WIN_SPLIT), S(WIN_Y)), (S(WIN_X + WIN_SPLIT), S(WIN_Y + WIN_H))],
-            fill=(154, 161, 156, 255), width=S(1))
-    img.alpha_composite(shadow_of(raised))
-    img.alpha_composite(raised)
-    save(img, "markers.png")
+    # índices aplicados: sombra, aro de aço chanfrado, lume rebaixado
+    mm, lm = index_shapes()
+    drop_shadow(L, mm)
+    env = 0.10 * np.clip(-(DX * LX + DY * LY) / 200, -1, 1)
+    L.over(metal(mm, 1.1, env=env), mm)
+    L.over(lume_fill(lm), lm)
+
+    # janela de dia/data: moldura de aço e papel rebaixado
+    fo = rrect(WIN_X - 3.5, WIN_Y - 3.5, WIN_X + WIN_W + 3.5, WIN_Y + WIN_H + 3.5, 3.5)
+    fi = rrect(WIN_X, WIN_Y, WIN_X + WIN_W, WIN_Y + WIN_H, 1.5)
+    drop_shadow(L, fo, 1.2, 1.8, 1.4, 0.5)
+    L.over(metal(fo, 1.0), fo)
+    paper = np.full((N, N, 3), 0.965, np.float32)
+    top = np.clip(1 - ((DY + C) - WIN_Y) / 5, 0, 1)      # sombra da moldura sobre o papel
+    left = np.clip(1 - ((DX + C) - WIN_X) / 3, 0, 1)
+    paper *= (1 - 0.28 * np.maximum(top, left * 0.7))[..., None]
+    L.over(paper, fi)
+    sep = rrect(WIN_X + WIN_SPLIT - 0.5, WIN_Y, WIN_X + WIN_SPLIT + 0.5, WIN_Y + WIN_H, 0)
+    L.over((0.55, 0.58, 0.56), sep)
+    save(L.image(), "markers.png")
 
 
 def make_aod_markers():
-    lay = canvas()
-    d = ImageDraw.Draw(lay)
-    draw_indices(d, LUME_AOD, None)
-    for deg in (180, 270):
-        lay.alpha_composite(baton(LUME_AOD, None).rotate(-deg, resample=Image.BICUBIC, center=(S(C), S(C))))
-    cx, cy = polar(150, 90)  # pontinho às 3h (a janela some no modo ambiente)
-    d.ellipse([cx - S(6), cy - S(6), cx + S(6), cy + S(6)], fill=LUME_AOD)
-    d.ellipse([S(C - 4.2), S(15 - 4.2), S(C + 4.2), S(15 + 4.2)], fill=LUME_AOD)  # ponto do triângulo
-    save(glow(lay, 3), "aod_markers.png")
+    _, lm = index_shapes()
+    x, y = polar(150, 90)
+    lm = np.maximum(lm, circle(x, y, 5.5))
+    lm = np.maximum(lm, circle(C, 15, 4))
+    g = np.clip(blur(lm, 3.5) * 0.9 + lm, 0, 1)
+    L = Layer()
+    L.over(np.array(LUME_AOD) / 255.0, g)
+    save(L.image(), "aod_markers.png")
 
 
-def spaced_text(d, center, text, font, fill, spacing):
-    """Texto centralizado com espaçamento entre letras (baseline em center[1])."""
-    widths = [d.textlength(ch, font=font) for ch in text]
-    total = sum(widths) + spacing * (len(text) - 1)
-    x = center[0] - total / 2
-    for ch, w in zip(text, widths):
-        d.text((x, center[1]), ch, font=font, fill=fill, anchor="ls")
-        x += w + spacing
+def make_glass():
+    """Reflexo do vidro: um crescente bem suave no alto à esquerda."""
+    a = circle(C - 12, C - 12, 208) - circle(C + 30, C + 40, 205)
+    a = np.clip(a, 0, 1)
+    a = blur(a, 14) * 0.10 * circle(C, C, 224)
+    L = Layer()
+    L.over((1, 1, 1), a)
+    save(L.image(), "glass.png")
 
 
-# --------------------------------------------------------------- ponteiros
-# Cada ponteiro aponta para CIMA. A imagem tem largura W e altura length+tail;
-# o pivô (centro do relógio) fica a `length` pixels do topo. Coordenadas das
-# formas abaixo são relativas ao pivô (y negativo = em direção à ponta).
+# ------------------------------------------------------------------ ponteiros
 HANDS = {
     "hour":   dict(w=44, length=110, tail=28,
                    outer=[(-7, 22), (-7, -60), (-18, -60), (0, -104), (18, -60), (7, -60), (7, 22)],
-                   inner=[(-3, -12), (-3, -56), (-11.5, -56), (0, -94), (11.5, -56), (3, -56), (3, -12)]),
+                   inner=[(-3.2, -12), (-3.2, -56.5), (-11.8, -56.5), (0, -95), (11.8, -56.5), (3.2, -56.5), (3.2, -12)]),
     "minute": dict(w=28, length=170, tail=34,
                    outer=[(-4.5, 28), (-9.5, -22), (-7, -132), (0, -164), (7, -132), (9.5, -22), (4.5, 28)],
-                   inner=[(-5, -26), (-3.8, -128), (0, -152), (3.8, -128), (5, -26)]),
+                   inner=[(-5.3, -26), (-4.0, -128), (0, -153), (4.0, -128), (5.3, -26)]),
 }
 SECOND = dict(w=26, length=176, tail=42)
 
 
-def hand_canvas(w, length, tail):
-    img = Image.new("RGBA", (S(w), S(length + tail)), (0, 0, 0, 0))
-    return img, (lambda x, y: (S(w / 2 + x), S(length + y)))
+def hand_space(w, length, tail):
+    W, H = w * U, (length + tail) * U
+
+    def pts(lst):
+        return [(w / 2 + x, length + y) for x, y in lst]
+    ys, xs = np.mgrid[0:H, 0:W].astype(np.float32)
+    hx = (xs + 0.5) / U - w / 2           # x relativo ao eixo do ponteiro
+    hy = (ys + 0.5) / U - length          # y relativo ao pivô
+    return W, H, pts, hx, hy
 
 
-def halo(layer, radius=1.6, opacity=0.7):
-    """Contorno escuro suave e simétrico (não depende do ângulo do ponteiro)."""
-    a = layer.getchannel("A").filter(ImageFilter.GaussianBlur(S(radius))).point(lambda v: int(v * opacity))
-    out = Image.new("RGBA", layer.size, (0, 0, 0, 0))
-    out.putalpha(a)
-    out.alpha_composite(layer)
+def hand_layers(key, h):
+    w, length, tail = h["w"], h["length"], h["tail"]
+    W, H, pts, hx, hy = hand_space(w, length, tail)
+    o = poly(pts(h["outer"]), W, H)
+    i = poly(pts(h["inner"]), W, H)
+    # duas faces: metade esquerda pega luz, metade direita fica na sombra
+    facet = np.tanh(-hx / 0.6) * 0.5            # +0.5 esquerda, -0.5 direita
+    s = bevel(o, 0.8)
+    along = np.clip(-hy / length, 0, 1)
+    c = STEEL[None, None, :] * (0.80 + 0.38 * facet + 0.25 * s - 0.06 * along)[..., None]
+    c = c + 0.45 * np.clip(s, 0, 1)[..., None] ** 3
+    c = c + 0.20 * np.exp(-((hx + 1.2) ** 2) / 0.5)[..., None] * 0.6      # filete de brilho
+    L = Layer(W, H)
+    L.over(np.clip(c, 0, 1), o)
+    L.over(lume_fill(i), i)
+    save(L.image(), f"{key}_hand.png")
+
+    sh = Layer(W, H)
+    sh.over((0, 0, 0), blur(o, 1.8) * 0.72)
+    save(sh.image(), f"{key}_hand_shadow.png")
+
+    a = Layer(W, H)
+    edge = np.clip(o - poly(pts(shrink(h["outer"], 1.6)), W, H), 0, 1)
+    a.over(np.array(LUME_AOD) / 255.0, np.clip(blur(o, 2.2) * 0.55, 0, 1))
+    a.over((0, 0, 0), o)
+    a.over(np.array(LUME_AOD) / 255.0, edge)
+    a.over(np.array(LUME_AOD) / 255.0, i)
+    save(a.image(), f"aod_{key}_hand.png")
+
+
+def shrink(pts_, d):
+    """Encolhe um polígono simétrico (aproximação simples para o contorno do AOD)."""
+    cy = sum(y for _, y in pts_) / len(pts_)
+    out = []
+    for x, y in pts_:
+        nx = x - math.copysign(d, x) if abs(x) > d else 0
+        ny = y + (d if y < cy else -d)
+        out.append((nx, ny))
     return out
 
 
-def make_hands():
-    for key, h in HANDS.items():
-        # modo ativo: moldura de aço + lume
-        img, P = hand_canvas(h["w"], h["length"], h["tail"])
-        d = ImageDraw.Draw(img)
-        d.polygon([P(x, y) for x, y in h["outer"]], fill=STEEL, outline=STEEL_DARK, width=S(1))
-        d.polygon([P(x, y) for x, y in h["inner"]], fill=LUME)
-        save(halo(img), f"{key}_hand.png")
+def sphere(mask_cx, mask_cy, r, W, H, base=STEEL):
+    ys, xs = np.mgrid[0:H, 0:W].astype(np.float32)
+    dx = ((xs + 0.5) / U - mask_cx) / r
+    dy = ((ys + 0.5) / U - mask_cy) / r
+    d2 = dx * dx + dy * dy
+    nz = np.sqrt(np.clip(1 - d2, 0, 1))
+    lam = np.clip(-(dx * LX + dy * LY) * 0.6 + nz * 0.6, 0, 1)
+    spec = np.clip(-(dx * LX + dy * LY) * 0.7 + nz * 0.7, 0, 1) ** 18
+    c = base[None, None, :] * (0.45 + 0.65 * lam)[..., None] + spec[..., None] * 0.8
+    return np.clip(c, 0, 1)
 
-        # modo ambiente: só contorno e lume, brilhando
-        img, P = hand_canvas(h["w"], h["length"], h["tail"])
-        d = ImageDraw.Draw(img)
-        d.polygon([P(x, y) for x, y in h["outer"]], fill=(0, 0, 0, 255), outline=LUME_AOD, width=int(S(1.6)))
-        d.polygon([P(x, y) for x, y in h["inner"]], fill=LUME_AOD)
-        save(glow(img, 2.5, 0.9), f"aod_{key}_hand.png")
 
-    # segundos: haste fina, ponta laranja, pirulito de lume, contrapeso e capa central
+def make_second():
     w, length, tail = SECOND["w"], SECOND["length"], SECOND["tail"]
-    img, P = hand_canvas(w, length, tail)
-    d = ImageDraw.Draw(img)
+    W, H, pts, hx, hy = hand_space(w, length, tail)
+    L = Layer(W, H)
+    bar = rrect(w / 2 - 1.3, length - 150, w / 2 + 1.3, length + 36, 0.6, W, H)
+    tip = rrect(w / 2 - 1.3, length - 171, w / 2 + 1.3, length - 148, 0.6, W, H)
+    lol_o, lol_i = circle(w / 2, length - 118, 8.6, W, H), circle(w / 2, length - 118, 5.9, W, H)
+    cw = circle(w / 2, length + 30, 5.6, W, H)
+    cap = circle(w / 2, length, 7.6, W, H)
+    body = np.maximum.reduce([bar, lol_o, cw, cap])
+    facet = np.tanh(-hx / 0.5) * 0.35
+    c = STEEL[None, None, :] * (0.82 + facet + 0.25 * bevel(body, 0.6))[..., None]
+    L.over(np.clip(c, 0, 1), np.maximum.reduce([bar, lol_o, cw]))
+    o = ORANGE[None, None, :] * (0.92 + 0.25 * np.tanh(-hx / 0.5))[..., None]
+    L.over(np.clip(o, 0, 1), tip)
+    L.over(lume_fill(lol_i), lol_i)
+    L.over(sphere(w / 2, length, 7.6, W, H), cap)
+    L.over((0.20, 0.22, 0.21), circle(w / 2, length, 1.8, W, H))
+    save(L.image(), "second_hand.png")
+    sh = Layer(W, H)
+    sh.over((0, 0, 0), blur(np.maximum.reduce([bar, tip, lol_o, cw, cap]), 1.4) * 0.55)
+    save(sh.image(), "second_hand_shadow.png")
 
-    def disc(cy, r, fill, outline=None):
-        (x0, y0), (x1, y1) = P(-r, cy - r), P(r, cy + r)
-        d.ellipse([x0, y0, x1, y1], fill=fill, outline=outline, width=S(1) if outline else 0)
 
-    d.rectangle([P(-1.3, -150), P(1.3, 36)], fill=STEEL)
-    d.rectangle([P(-1.3, -170), P(1.3, -148)], fill=ORANGE)
-    disc(-118, 8.5, STEEL)
-    disc(-118, 5.8, LUME)
-    disc(30, 5.5, STEEL)
-    disc(0, 7.5, STEEL, STEEL_DARK)
-    disc(0, 2.2, (58, 65, 60, 255))
-    save(halo(img, 1.4, 0.6), "second_hand.png")
-
-
-# ------------------------------------------------------------------ preview
-def make_preview():
-    """Imagem estática da galeria: Floresta + luneta preta, 10:08:34, sexta 15, 82%."""
-    prev = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 255))
-    for name in ("dial_floresta.png", "bezel_preta.png", "markers.png"):
-        prev.alpha_composite(Image.open(os.path.join(OUT, name)).convert("RGBA"))
-
-    # textos dinâmicos desenhados como ficariam no relógio
-    big = Image.new("RGBA", (S(SIZE), S(SIZE)), (0, 0, 0, 0))
+# ------------------------------------------------------------------ prévia
+def compose_preview(dial="floresta", bezel="preta", hms=(10, 8, 34), day="SEX", date="15", bat="82%",
+                    shadow=(4, 5), name="preview.png"):
+    S = SIZE * K
+    prev = Image.new("RGBA", (S, S), (0, 0, 0, 255))
+    for n in (f"dial_{dial}.png", f"bezel_{bezel}.png", "markers.png"):
+        prev.alpha_composite(Image.open(os.path.join(OUT, n)).convert("RGBA"))
+    big = Image.new("RGBA", (S * 2, S * 2), (0, 0, 0, 0))
     d = ImageDraw.Draw(big)
-    f19 = ImageFont.truetype(FONT_WINDOW, S(19))
-    f17 = ImageFont.truetype(FONT_WINDOW, S(17))
-    mid = S(WIN_Y + WIN_H / 2)
-    d.text((S(WIN_X + WIN_SPLIT / 2), mid), "SEX", font=f19, fill=(21, 24, 22, 255), anchor="mm")
-    d.text((S(WIN_X + WIN_SPLIT + (WIN_W - WIN_SPLIT) / 2), mid), "15", font=f19, fill=(21, 24, 22, 255), anchor="mm")
-    d.text((S(BAT_LABEL_END), S(BAT_BASELINE)), "BATERIA", font=f17, fill=(238, 242, 234, 255), anchor="rs")
-    d.text((S(BAT_VALUE_START), S(BAT_BASELINE)), "82%", font=f17, fill=ORANGE, anchor="ls")
-    prev.alpha_composite(big.resize((SIZE, SIZE), Image.LANCZOS))
+    f19 = ImageFont.truetype(FONT_WINDOW, 23 * K * 2)
+    f17 = ImageFont.truetype(FONT_WINDOW, 17 * K * 2)
+    q = K * 2
+    mid = (WIN_Y + WIN_H / 2) * q
+    ink = (21, 24, 22, 255)
+    d.text(((WIN_X + WIN_SPLIT / 2) * q, mid), day, font=f19, fill=(200, 38, 42, 255) if day == "DOM" else ink, anchor="mm")
+    d.text(((WIN_X + WIN_SPLIT + (WIN_W - WIN_SPLIT) / 2) * q, mid), date, font=f19, fill=ink, anchor="mm")
+    d.text((222 * q, 318 * q), "BATERIA", font=f17, fill=(238, 242, 234, 255), anchor="rs")
+    d.text((227 * q, 318 * q), bat, font=f17, fill=(255, 106, 61, 255), anchor="ls")
+    prev.alpha_composite(big.resize((S, S), Image.LANCZOS))
 
-    def compose(name, deg, length):
-        hand = Image.open(os.path.join(OUT, name)).convert("RGBA")
-        c = Image.new("RGBA", (SIZE * 2, SIZE * 2), (0, 0, 0, 0))
-        c.paste(hand, (SIZE - hand.width // 2, SIZE - length), hand)
-        c = c.rotate(-deg, resample=Image.BICUBIC, center=(SIZE, SIZE))
-        prev.alpha_composite(c.crop((SIZE // 2, SIZE // 2, SIZE + SIZE // 2, SIZE + SIZE // 2)))
+    def put(fname, deg, length, dx=0, dy=0):
+        hand = Image.open(os.path.join(OUT, fname)).convert("RGBA")
+        c = Image.new("RGBA", (S * 2, S * 2), (0, 0, 0, 0))
+        c.paste(hand, (S - hand.width // 2, S - length * K), hand)
+        c = c.rotate(-deg, resample=Image.BICUBIC, center=(S, S))
+        prev.alpha_composite(c.crop((S // 2 - int(dx * K), S // 2 - int(dy * K),
+                                     S // 2 - int(dx * K) + S, S // 2 - int(dy * K) + S)))
 
-    h, m, s = 10, 8, 34
-    compose("hour_hand.png", (h % 12 + m / 60) * 30, HANDS["hour"]["length"])
-    compose("minute_hand.png", (m + s / 60) * 6, HANDS["minute"]["length"])
-    compose("second_hand.png", s * 6, SECOND["length"])
-
-    prev.putalpha(circle_mask(SIZE / 2).resize((SIZE, SIZE), Image.LANCZOS))
-    prev.save(os.path.join(OUT, "preview.png"))
-    print("gerado preview.png")
-
-
-# bateria: "BATERIA" termina em BAT_LABEL_END, o percentual começa em BAT_VALUE_START
-# (mesmos valores do watchface.xml)
-BAT_BASELINE = 318
-BAT_LABEL_END = 222
-BAT_VALUE_START = 227
-
-
-def print_xml_positions():
-    """Imprime as caixas dos PartText (topo das letras = y + 0.28 x tamanho, altura 1.2 x tamanho)."""
-    for label, cap_top, size in (("janela", WIN_Y + WIN_H / 2 - 0.7 * 19 / 2, 19),
-                                 ("bateria", BAT_BASELINE - 0.7 * 17, 17)):
-        print(f"{label}: y={cap_top - 0.28 * size:.1f} height={1.2 * size:.1f}")
+    h, m, s = hms
+    angs = {"hour": (h % 12 + m / 60) * 30, "minute": (m + s / 60) * 6, "second": s * 6}
+    lens = {"hour": HANDS["hour"]["length"], "minute": HANDS["minute"]["length"], "second": SECOND["length"]}
+    for k_ in ("hour", "minute", "second"):
+        put(f"{k_}_hand_shadow.png", angs[k_], lens[k_], *shadow)
+        put(f"{k_}_hand.png", angs[k_], lens[k_])
+    prev.alpha_composite(Image.open(os.path.join(OUT, "glass.png")).convert("RGBA"))
+    mask = Image.new("L", (S * 2, S * 2), 0)
+    ImageDraw.Draw(mask).ellipse([0, 0, S * 2 - 1, S * 2 - 1], fill=255)
+    prev.putalpha(mask.resize((S, S), Image.LANCZOS))
+    prev.save(os.path.join(OUT, name))
+    print("gerado", name)
+    return prev
 
 
 if __name__ == "__main__":
-    for k, v in DIALS.items():
-        make_dial(f"dial_{k}.png", v)
-    for k, v in BEZELS.items():
-        make_bezel(f"bezel_{k}.png", v)
+    for k_, v in DIALS.items():
+        make_dial(f"dial_{k_}.png", v)
+    for k_, v in BEZELS.items():
+        make_bezel(f"bezel_{k_}.png", v)
     make_markers()
     make_aod_markers()
-    make_hands()
-    make_preview()
-    print_xml_positions()
+    make_glass()
+    for k_, h in HANDS.items():
+        hand_layers(k_, h)
+    make_second()
+    compose_preview()
