@@ -21,6 +21,12 @@ só XML + imagens — instalado direto no relógio via `adb`.
       <code>faces/orange-digital</code><br>
       <sub>Digital grande (horas brancas, minutos laranja), data, bateria e 3 complicações editáveis: clima (Samsung Weather), passos e batimentos</sub>
     </td>
+    <td align="center" width="33%">
+      <img src="faces/green-diver/src/main/res/drawable-nodpi/preview.png" width="200" alt="Green Diver"><br>
+      <b>Green Diver</b><br>
+      <code>faces/green-diver</code><br>
+      <sub>Analógico estilo relógio de mergulho: luneta de 60 min, índices de lume, janela de dia/data às 3h e bateria. Mostrador em 3 verdes e luneta preta ou verde (Personalizar)</sub>
+    </td>
   </tr>
 </table>
 
