@@ -1,0 +1,434 @@
+<title>Green Diver</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: relógio fixo à esquerda como peça de vitrine, ficha técnica à direita; empilha no celular. */
+:root {
+  --bg: #eef1ec;
+  --surface: #f8faf7;
+  --fg: #16201a;
+  --muted: #5a675f;
+  --line: #d3dbd4;
+  --accent: #1d6a48;
+  --accent-ink: #ffffff;
+  --signal: #d9532c;
+  --stage: #dfe5df;
+  --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c110e; --surface: #121a15; --fg: #e3eae5; --muted: #8e9c94; --line: #24302a;
+    --accent: #5cc08d; --accent-ink: #08130d; --signal: #ff7a50; --stage: #070a08; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0c110e; --surface: #121a15; --fg: #e3eae5; --muted: #8e9c94; --line: #24302a;
+  --accent: #5cc08d; --accent-ink: #08130d; --signal: #ff7a50; --stage: #070a08; color-scheme: dark;
+}
+html, body { background: var(--bg); color: var(--fg); }
+body {
+  font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 56px;
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+header { display: flex; flex-direction: column; gap: 6px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(30px, 5vw, 46px); line-height: 1.05; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+.lede { margin: 4px 0 0; max-width: 62ch; color: var(--muted); }
+
+.grid { display: grid; grid-template-columns: minmax(0, 470px) minmax(0, 1fr); gap: 40px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+.showcase { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); display: flex; flex-direction: column; gap: 18px; }
+@media (max-width: 860px) { .showcase { position: static; } }
+.stage { background: var(--stage); border-radius: 28px; padding: 28px; display: grid; place-items: center; }
+.device {
+  width: 100%; max-width: 400px; aspect-ratio: 1; border-radius: 50%;
+  background: #050605;
+  box-shadow: 0 0 0 9px #1b1f1c, 0 0 0 11px #3a403c, 0 18px 40px rgba(0,0,0,.35);
+  overflow: hidden;
+}
+.device svg { display: block; width: 100%; height: 100%; }
+
+.controls { display: flex; flex-direction: column; gap: 12px; }
+.ctrl { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ctrl-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); width: 74px; flex: none; }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg button {
+  font: 500 13px/1 var(--font-body); color: var(--fg); background: transparent;
+  border: 1px solid var(--line); border-radius: 999px; padding: 8px 13px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 7px;
+}
+.seg button:hover { border-color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.dot { width: 11px; height: 11px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(255,255,255,.25); }
+
+.spec { display: flex; flex-direction: column; gap: 34px; min-width: 0; }
+section { display: flex; flex-direction: column; gap: 12px; }
+h2 { font-family: var(--font-display); font-weight: 700; font-size: 20px; margin: 0; letter-spacing: -.005em; }
+p { margin: 0; max-width: 66ch; }
+.muted { color: var(--muted); }
+
+.anatomy { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+.anatomy li { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 16px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.anatomy b { font-weight: 600; }
+@media (max-width: 520px) { .anatomy li { grid-template-columns: minmax(0, 1fr); gap: 2px; } }
+
+.palette { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.sw { display: flex; gap: 10px; align-items: center; padding: 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.sw i { width: 34px; height: 34px; border-radius: 8px; flex: none; box-shadow: inset 0 0 0 1px rgba(127,127,127,.3); }
+.sw span { display: flex; flex-direction: column; font-size: 13px; line-height: 1.3; min-width: 0; }
+.sw code { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
+
+.tree { font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; overflow-x: auto; margin: 0; white-space: pre; }
+ol.steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; max-width: 66ch; }
+.questions { border-left: 3px solid var(--signal); padding: 4px 0 4px 16px; display: flex; flex-direction: column; gap: 8px; }
+.questions ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Protótipo · faces/green-diver · ainda não implementado</span>
+    <h1>Green Diver</h1>
+    <p class="lede">Mostrador analógico no espírito dos mergulhadores automáticos japoneses: luneta de 60 minutos, índices redondos grossos de lume, ponteiro das horas em seta e janela de dia e data às 3 horas. Mostrador verde em raio de sol, sem nenhuma marca no desenho.</p>
+  </header>
+
+  <div class="grid">
+    <div class="showcase">
+      <div class="stage">
+        <div class="device"><svg id="face" viewBox="0 0 450 450" role="img" aria-label="Prévia do mostrador Green Diver"></svg></div>
+      </div>
+      <div class="controls">
+        <div class="ctrl"><span class="ctrl-label">Mostrador</span>
+          <div class="seg" id="seg-dial">
+            <button type="button" id="dial-floresta" data-v="floresta" aria-pressed="true"><span class="dot" style="background:#1f5039"></span>Floresta</button>
+            <button type="button" id="dial-esmeralda" data-v="esmeralda" aria-pressed="false"><span class="dot" style="background:#0f5c4b"></span>Esmeralda</button>
+            <button type="button" id="dial-oliva" data-v="oliva" aria-pressed="false"><span class="dot" style="background:#434c2a"></span>Oliva</button>
+          </div>
+        </div>
+        <div class="ctrl"><span class="ctrl-label">Luneta</span>
+          <div class="seg" id="seg-bezel">
+            <button type="button" id="bezel-preta" data-v="preta" aria-pressed="true"><span class="dot" style="background:#111513"></span>Preta</button>
+            <button type="button" id="bezel-verde" data-v="verde" aria-pressed="false"><span class="dot" style="background:#163a2a"></span>Verde</button>
+          </div>
+        </div>
+        <div class="ctrl"><span class="ctrl-label">Modo</span>
+          <div class="seg" id="seg-mode">
+            <button type="button" id="mode-ativo" data-v="ativo" aria-pressed="true">Ativo</button>
+            <button type="button" id="mode-aod" data-v="aod" aria-pressed="false">Ambiente (AOD)</button>
+          </div>
+        </div>
+        <div class="ctrl"><span class="ctrl-label">Hora</span>
+          <div class="seg" id="seg-time">
+            <button type="button" id="time-live" data-v="live" aria-pressed="true">Agora</button>
+            <button type="button" id="time-preview" data-v="preview" aria-pressed="false">10:08:34 (galeria)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="spec">
+      <section>
+        <h2>A ideia</h2>
+        <p>Pegar a linguagem dos relógios de mergulho de entrada da Seiko (aquele visual robusto, de ferramenta) e levar para um verde profundo. O foco é a leitura rápida: ponteiros grandes e distintos, índices que brilham no escuro e quase nenhum texto. A tela redonda do Galaxy Watch vira a luneta; o miolo é o mostrador.</p>
+      </section>
+
+      <section>
+        <h2>Anatomia</h2>
+        <ul class="anatomy">
+          <li><b>Luneta 60 min</b><span>Anel externo com 10 a 50, traços de minuto só no primeiro quarto (0 a 15, como na luneta de mergulho real) e triângulo às 12 com ponto de lume. Os números acompanham o anel, então o 30 fica de cabeça para baixo, como num relógio de verdade. Fixa: não gira.</span></li>
+          <li><b>Mostrador</b><span>Verde com efeito raio de sol (sunburst): o brilho muda com o ângulo, mais claro no canto superior esquerdo e no oposto. Vinheta escura na borda dá profundidade.</span></li>
+          <li><b>Índices</b><span>Bolinhas de lume com aro prateado nas horas, trapézio grande às 12, bastões às 6 e 9. Trilha de minutos fina logo dentro da luneta.</span></li>
+          <li><b>Ponteiros</b><span>Horas em seta larga, minutos em espada, os dois preenchidos de lume. Segundos fino com pirulito de lume e ponta laranja, em varredura suave como um automático.</span></li>
+          <li><b>Dia e data</b><span>Janela branca às 3 com dia abreviado em português e o número do dia. Domingo aparece em vermelho, detalhe clássico das janelas de dia da Seiko.</span></li>
+          <li><b>Textos</b><span>Em cima: GREEN DIVER. Embaixo, no lugar do “200m” dos mergulhadores, a bateria do relógio no mesmo estilo de letra, com o percentual em laranja.</span></li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Modo ambiente (AOD)</h2>
+        <p>Fundo preto para economizar bateria. Ficam só o que brilharia no escuro num relógio real: índices, ponteiros e o ponto do triângulo, em verde-lume com leve brilho. Sem segundos, sem luneta e sem janela de data. Aperte “Ambiente (AOD)” ao lado para ver.</p>
+      </section>
+
+      <section>
+        <h2>Paleta</h2>
+        <div class="palette">
+          <div class="sw"><i style="background:#1f5039"></i><span>Verde floresta<code>#1F5039</code></span></div>
+          <div class="sw"><i style="background:#111513"></i><span>Luneta preta<code>#111513</code></span></div>
+          <div class="sw"><i style="background:#eef3e2"></i><span>Lume (dia)<code>#EEF3E2</code></span></div>
+          <div class="sw"><i style="background:#7dffb0"></i><span>Lume (AOD)<code>#7DFFB0</code></span></div>
+          <div class="sw"><i style="background:#cfd6d1"></i><span>Aço escovado<code>#CFD6D1</code></span></div>
+          <div class="sw"><i style="background:#ff6a3d"></i><span>Laranja segundos<code>#FF6A3D</code></span></div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Personalização no relógio</h2>
+        <p>Pelo editor do mostrador (segurar a tela → Personalizar), a proposta é oferecer duas opções, iguais aos botões ao lado: a cor do mostrador (Floresta, Esmeralda, Oliva) e a cor da luneta (Preta ou Verde). No Watch Face Format isso é um <code>UserConfiguration</code> que troca qual imagem de fundo é usada, então não pesa no relógio.</p>
+      </section>
+
+      <section>
+        <h2>Como vou implementar (quando você aprovar)</h2>
+        <ol class="steps">
+          <li>Criar <code>faces/green-diver</code> copiando a estrutura de <code>faces/classic</code>.</li>
+          <li>Escrever <code>art/generate_images.py</code> (Pillow, supersampling 4×) para desenhar mostradores e lunetas de cada cor, os três ponteiros e o <code>preview.png</code>.</li>
+          <li>No <code>watchface.xml</code>: <code>HourHand</code>, <code>MinuteHand</code> e <code>SecondHand</code> com varredura, textos para dia, data e bateria, e uma variante para o modo ambiente.</li>
+          <li>Adicionar o mostrador na galeria do README.</li>
+        </ol>
+        <pre class="tree">faces/green-diver/
+  art/generate_images.py
+  src/main/res/raw/watchface.xml
+  src/main/res/drawable-nodpi/
+    dial_floresta.png  dial_esmeralda.png  dial_oliva.png
+    bezel_preta.png    bezel_verde.png
+    hour_hand.png  minute_hand.png  second_hand.png
+    aod_markers.png  preview.png</pre>
+      </section>
+
+      <section class="questions">
+        <h2>Para você decidir</h2>
+        <ul>
+          <li>O nome “Green Diver” serve, ou prefere outro?</li>
+          <li>Embaixo, só bateria, ou quer também passos ou batimentos (como complicações editáveis do Orange Digital)?</li>
+          <li>Manter as três cores de mostrador, ou fixar uma só?</li>
+        </ul>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.getElementById("face");
+  const C = 225;
+  const DIALS = {
+    floresta: [31, 80, 57],
+    esmeralda: [15, 92, 75],
+    oliva: [67, 76, 42]
+  };
+  const BEZELS = { preta: "#111513", verde: "#163a2a" };
+  const DAYS = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
+  const LUME = "#eef3e2", LUME_AOD = "#7dffb0", STEEL = "#cfd6d1", STEEL_DARK = "#59625c", ORANGE = "#ff6a3d";
+  const state = { dial: "floresta", bezel: "preta", mode: "ativo", time: "live" };
+  try { const s = JSON.parse(localStorage.getItem("gd-proto") || "{}"); Object.assign(state, s); } catch (e) {}
+
+  function el(name, attrs, parent) {
+    const n = document.createElementNS(NS, name);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  }
+  function polar(r, deg) {
+    const a = deg * Math.PI / 180;
+    return [C + r * Math.sin(a), C - r * Math.cos(a)];
+  }
+  function rgb(c, k) {
+    return "rgb(" + c.map(v => Math.max(0, Math.min(255, Math.round(v * k)))).join(",") + ")";
+  }
+
+  let hands = {};
+  let dayText, dateText;
+
+  function build() {
+    svg.innerHTML = "";
+    const aod = state.mode === "aod";
+    const defs = el("defs", {}, svg);
+    const vign = el("radialGradient", { id: "vign", cx: "50%", cy: "50%", r: "50%" }, defs);
+    el("stop", { offset: "0.55", "stop-color": "#000", "stop-opacity": "0" }, vign);
+    el("stop", { offset: "1", "stop-color": "#000", "stop-opacity": "0.55" }, vign);
+    const glow = el("filter", { id: "glow", x: "-50%", y: "-50%", width: "200%", height: "200%" }, defs);
+    el("feGaussianBlur", { stdDeviation: "3", result: "b" }, glow);
+    const m = el("feMerge", {}, glow);
+    el("feMergeNode", { in: "b" }, m); el("feMergeNode", { in: "SourceGraphic" }, m);
+    const shadow = el("filter", { id: "shadow", x: "-30%", y: "-30%", width: "160%", height: "160%" }, defs);
+    el("feDropShadow", { dx: "2", dy: "3", stdDeviation: "2.2", "flood-color": "#000", "flood-opacity": "0.55" }, shadow);
+
+    el("rect", { x: 0, y: 0, width: 450, height: 450, fill: "#000" }, svg);
+
+    if (!aod) {
+      // luneta
+      const bz = BEZELS[state.bezel];
+      el("circle", { cx: C, cy: C, r: 225, fill: bz }, svg);
+      el("circle", { cx: C, cy: C, r: 223, fill: "none", stroke: "#2c332f", "stroke-width": 2 }, svg);
+      const bezelG = el("g", {}, svg);
+      for (let i = 0; i < 60; i++) {
+        const deg = i * 6;
+        if (i === 0) continue;
+        if (i % 10 === 0) {
+          const [x, y] = polar(205, deg);
+          const t = el("text", {
+            x, y, "text-anchor": "middle", "dominant-baseline": "central",
+            transform: `rotate(${deg} ${x} ${y})`, fill: "#e8eee6",
+            "font-family": "'Barlow Condensed', 'Arial Narrow', sans-serif", "font-weight": 600, "font-size": 25
+          }, bezelG);
+          t.textContent = String(i);
+        } else if (i % 5 === 0) {
+          const [x1, y1] = polar(212, deg), [x2, y2] = polar(197, deg);
+          el("line", { x1, y1, x2, y2, stroke: "#e8eee6", "stroke-width": 5, "stroke-linecap": "butt" }, bezelG);
+        } else if (i < 15) {
+          const [x1, y1] = polar(211, deg), [x2, y2] = polar(201, deg);
+          el("line", { x1, y1, x2, y2, stroke: "#e8eee6", "stroke-width": 1.8 }, bezelG);
+        }
+      }
+      // triângulo às 12
+      el("polygon", { points: `${C - 15},6 ${C + 15},6 ${C},31`, fill: "#e8eee6" }, svg);
+      el("circle", { cx: C, cy: 15, r: 4.2, fill: LUME, stroke: STEEL_DARK, "stroke-width": 1 }, svg);
+      // anel de aço entre luneta e mostrador
+      el("circle", { cx: C, cy: C, r: 187.5, fill: "none", stroke: STEEL, "stroke-width": 3 }, svg);
+      el("circle", { cx: C, cy: C, r: 185.5, fill: "none", stroke: "#000", "stroke-opacity": .5, "stroke-width": 1 }, svg);
+
+      // mostrador sunburst
+      const base = DIALS[state.dial];
+      const R = 185;
+      const dialG = el("g", {}, svg);
+      const N = 360;
+      for (let i = 0; i < N; i++) {
+        const a0 = i * 360 / N, a1 = (i + 1.15) * 360 / N;
+        const mid = (a0 + 0.5) * Math.PI / 180;
+        const b = 0.5 + 0.5 * Math.cos(2 * (mid - Math.PI * 1.75));
+        const k = 0.72 + 0.62 * Math.pow(b, 1.6) + (Math.random() - .5) * 0.04;
+        const [x0, y0] = polar(R, a0), [x1, y1] = polar(R, a1);
+        el("path", { d: `M${C},${C} L${x0.toFixed(2)},${y0.toFixed(2)} L${x1.toFixed(2)},${y1.toFixed(2)} Z`, fill: rgb(base, k) }, dialG);
+      }
+      el("circle", { cx: C, cy: C, r: R, fill: "url(#vign)" }, svg);
+
+      // trilha de minutos
+      for (let i = 0; i < 60; i++) {
+        const deg = i * 6;
+        const long = i % 5 === 0;
+        const [x1, y1] = polar(181, deg), [x2, y2] = polar(long ? 171 : 175, deg);
+        el("line", { x1, y1, x2, y2, stroke: "#e6ece4", "stroke-opacity": long ? .95 : .7, "stroke-width": long ? 2.2 : 1.2 }, svg);
+      }
+    } else {
+      el("circle", { cx: C, cy: C, r: 4.2, transform: `translate(0 ${15 - C})`, fill: LUME_AOD, filter: "url(#glow)" }, svg);
+    }
+
+    // índices
+    const idx = el("g", aod ? { filter: "url(#glow)" } : { filter: "url(#shadow)" }, svg);
+    const fill = aod ? LUME_AOD : LUME;
+    const ring = aod ? "none" : STEEL;
+    for (let h = 0; h < 12; h++) {
+      const deg = h * 30;
+      if (h === 3) continue;
+      if (h === 0) {
+        el("polygon", { points: `${C - 15},50 ${C + 15},50 ${C + 10},92 ${C - 10},92`, fill, stroke: ring, "stroke-width": 2.5, "stroke-linejoin": "round" }, idx);
+      } else if (h === 6 || h === 9) {
+        const g = el("g", { transform: `rotate(${deg} ${C} ${C})` }, idx);
+        el("rect", { x: C - 9, y: 52, width: 18, height: 40, rx: 2, fill, stroke: ring, "stroke-width": 2.5 }, g);
+      } else {
+        const [x, y] = polar(150, deg);
+        el("circle", { cx: x, cy: y, r: 13, fill, stroke: ring, "stroke-width": 2.5 }, idx);
+      }
+    }
+    if (aod) {
+      // 3h fica com um ponto pequeno no AOD (janela some)
+      const [x, y] = polar(150, 90);
+      el("circle", { cx: x, cy: y, r: 6, fill: LUME_AOD }, idx);
+    }
+
+    dayText = dateText = null;
+    if (!aod) {
+      // janela dia/data às 3
+      const wx = 314, wy = 211, ww = 74, wh = 28;
+      el("rect", { x: wx - 3, y: wy - 3, width: ww + 6, height: wh + 6, rx: 3, fill: STEEL, stroke: STEEL_DARK, "stroke-width": 1 }, svg);
+      el("rect", { x: wx, y: wy, width: ww, height: wh, rx: 1.5, fill: "#f7f7f2" }, svg);
+      el("line", { x1: wx + 44, y1: wy, x2: wx + 44, y2: wy + wh, stroke: "#9aa19c", "stroke-width": 1 }, svg);
+      dayText = el("text", { x: wx + 22, y: wy + wh / 2 + 1, "text-anchor": "middle", "dominant-baseline": "central", "font-family": "'Barlow Condensed', 'Arial Narrow', sans-serif", "font-weight": 700, "font-size": 19, fill: "#151816" }, svg);
+      dateText = el("text", { x: wx + 59, y: wy + wh / 2 + 1, "text-anchor": "middle", "dominant-baseline": "central", "font-family": "'Barlow Condensed', 'Arial Narrow', sans-serif", "font-weight": 700, "font-size": 19, fill: "#151816" }, svg);
+
+      // textos
+      const top = el("text", { x: C, y: 128, "text-anchor": "middle", "font-family": "'Archivo', Arial, sans-serif", "font-weight": 700, "font-size": 15, "letter-spacing": 3, fill: "#eef2ea" }, svg);
+      top.textContent = "GREEN DIVER";
+      const top2 = el("text", { x: C, y: 145, "text-anchor": "middle", "font-family": "'Barlow Condensed', 'Arial Narrow', sans-serif", "font-weight": 500, "font-size": 12, "letter-spacing": 2.5, fill: "#cfd8cf", "fill-opacity": .85 }, svg);
+      top2.textContent = "AUTOMATIC";
+      const bat = el("text", { x: C, y: 318, "text-anchor": "middle", "font-family": "'Barlow Condensed', 'Arial Narrow', sans-serif", "font-weight": 600, "font-size": 17, "letter-spacing": 1.5, fill: "#eef2ea" }, svg);
+      bat.innerHTML = "BATERIA <tspan fill='" + ORANGE + "'>82%</tspan>";
+    }
+
+    // ponteiros
+    const handFill = aod ? "#000" : STEEL;
+    const handStroke = aod ? LUME_AOD : STEEL_DARK;
+    const lumeFill = aod ? LUME_AOD : LUME;
+    function hand(outer, inner, extra) {
+      const g = el("g", { filter: aod ? "url(#glow)" : "url(#shadow)" }, svg);
+      const r = el("g", {}, g);
+      el("path", { d: outer, fill: handFill, stroke: handStroke, "stroke-width": aod ? 1.6 : 1, "stroke-linejoin": "round" }, r);
+      el("path", { d: inner, fill: lumeFill }, r);
+      if (extra) extra(r);
+      return r;
+    }
+    hands.h = hand("M-7,22 L-7,-60 L-18,-60 L0,-104 L18,-60 L7,-60 L7,22 Z",
+                   "M-3,-12 L-3,-56 L-11.5,-56 L0,-94 L11.5,-56 L3,-56 L3,-12 Z");
+    hands.m = hand("M-4.5,28 L-9.5,-22 L-7,-132 L0,-164 L7,-132 L9.5,-22 L4.5,28 Z",
+                   "M-5,-26 L-3.8,-128 L0,-152 L3.8,-128 L5,-26 Z");
+    if (!aod) {
+      const g = el("g", { filter: "url(#shadow)" }, svg);
+      const r = el("g", {}, g);
+      el("rect", { x: -1.3, y: -150, width: 2.6, height: 186, fill: STEEL }, r);
+      el("rect", { x: -1.3, y: -170, width: 2.6, height: 22, fill: ORANGE }, r);
+      el("circle", { cx: 0, cy: -118, r: 8.5, fill: STEEL }, r);
+      el("circle", { cx: 0, cy: -118, r: 5.8, fill: LUME }, r);
+      el("circle", { cx: 0, cy: 30, r: 5.5, fill: STEEL }, r);
+      el("circle", { cx: 0, cy: 0, r: 7.5, fill: STEEL, stroke: STEEL_DARK, "stroke-width": 1 }, r);
+      el("circle", { cx: 0, cy: 0, r: 2.2, fill: "#3a413c" }, r);
+      hands.s = r;
+    } else {
+      hands.s = null;
+      el("circle", { cx: C, cy: C, r: 5, fill: "#000", stroke: LUME_AOD, "stroke-width": 1.6 }, svg);
+    }
+    tick(true);
+  }
+
+  let lastStep = -1;
+  function tick(force) {
+    let now = new Date();
+    if (state.time === "preview") { now = new Date(); now.setHours(10, 8, 34, 0); }
+    // 6 batidas por segundo, como um movimento automático
+    const ms = now.getMilliseconds();
+    const step = Math.floor(ms / (1000 / 6));
+    const sec = now.getSeconds() + (state.time === "preview" ? 0 : step / 6);
+    const min = now.getMinutes() + sec / 60;
+    const hr = (now.getHours() % 12) + min / 60;
+    const key = now.getSeconds() * 6 + step;
+    if (!force && key === lastStep) return;
+    lastStep = key;
+    hands.h.setAttribute("transform", `translate(${C} ${C}) rotate(${hr * 30})`);
+    hands.m.setAttribute("transform", `translate(${C} ${C}) rotate(${min * 6})`);
+    if (hands.s) hands.s.setAttribute("transform", `translate(${C} ${C}) rotate(${sec * 6})`);
+    if (dayText) {
+      const d = now.getDay();
+      dayText.textContent = DAYS[d];
+      dayText.setAttribute("fill", d === 0 ? "#c8262a" : "#151816");
+      dateText.textContent = String(now.getDate());
+    }
+  }
+
+  function loop() { tick(false); requestAnimationFrame(loop); }
+
+  function bindSeg(id, key) {
+    const seg = document.getElementById(id);
+    const sync = () => seg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state[key])));
+    seg.addEventListener("click", e => {
+      const b = e.target.closest("button"); if (!b) return;
+      state[key] = b.dataset.v; sync(); build();
+      try { localStorage.setItem("gd-proto", JSON.stringify(state)); } catch (err) {}
+    });
+    sync();
+  }
+  bindSeg("seg-dial", "dial");
+  bindSeg("seg-bezel", "bezel");
+  bindSeg("seg-mode", "mode");
+  bindSeg("seg-time", "time");
+  build();
+  requestAnimationFrame(loop);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => build());
+})();
+</script>
