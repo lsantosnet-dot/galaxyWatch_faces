@@ -248,14 +248,14 @@
             </Complication>
         </ComplicationSlot>
 
-        <!-- 5) Ponteiros brancos finos. Cada imagem aponta para cima e gira no pivô
+        <!-- 5) Ponteiros brancos: hora e minuto largos e vazados, segundos fino. Cada imagem aponta para cima e gira no pivô
                 (pivotY = posição do centro do relógio dentro da imagem, de 0 a 1). -->
         <AnalogClock x="0" y="0" width="450" height="450">
-            <!-- hora: 12x134, pivô a 118 px do topo -->
-            <HourHand resource="hour_hand" x="219" y="107" width="12" height="134"
+            <!-- hora: 16x134 (vazado), pivô a 118 px do topo -->
+            <HourHand resource="hour_hand" x="217" y="107" width="16" height="134"
                       pivotX="0.5" pivotY="0.8806" />
-            <!-- minuto: 12x206, pivô a 188 px do topo -->
-            <MinuteHand resource="minute_hand" x="219" y="37" width="12" height="206"
+            <!-- minuto: 16x206 (vazado), pivô a 188 px do topo -->
+            <MinuteHand resource="minute_hand" x="217" y="37" width="16" height="206"
                         pivotX="0.5" pivotY="0.9126" />
             <!-- segundos: 12x239, pivô a 205 px do topo; some no modo ambiente -->
             <SecondHand resource="second_hand" x="219" y="20" width="12" height="239"

@@ -4,7 +4,7 @@ plugins { id("com.android.application") }
 android {
     defaultConfig {
         // Suba estes valores a cada nova versão que for instalar por cima da anterior.
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
     }
 }
