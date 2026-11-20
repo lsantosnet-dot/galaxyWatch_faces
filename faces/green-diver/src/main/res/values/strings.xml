@@ -1,0 +1,12 @@
+<resources>
+    <string name="watchface_name">Green Diver</string>
+
+    <string name="cfg_dial">Mostrador</string>
+    <string name="dial_floresta">Verde floresta</string>
+    <string name="dial_esmeralda">Verde esmeralda</string>
+    <string name="dial_oliva">Verde oliva</string>
+
+    <string name="cfg_bezel">Luneta</string>
+    <string name="bezel_preta">Preta</string>
+    <string name="bezel_verde">Verde</string>
+</resources>

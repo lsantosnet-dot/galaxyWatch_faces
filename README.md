@@ -22,6 +22,20 @@ só XML + imagens — instalado direto no relógio via `adb`.
       <sub>Digital grande (horas brancas, minutos laranja), data, bateria e 3 complicações editáveis: clima (Samsung Weather), passos e batimentos</sub>
     </td>
     <td align="center" width="33%">
+      <img src="faces/space-cruiser/src/main/res/drawable-nodpi/preview.png" width="200" alt="Space Cruiser"><br>
+      <b>Space Cruiser</b><br>
+      <code>faces/space-cruiser</code><br>
+      <sub>Nave sobre nebulosa, hora e data no topo e 3 complicações editáveis: passos, clima (Samsung Weather) e bateria</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="33%">
+      <img src="faces/green-diver/src/main/res/drawable-nodpi/preview.png" width="200" alt="Green Diver"><br>
+      <b>Green Diver</b><br>
+      <code>faces/green-diver</code><br>
+      <sub>Analógico realista estilo relógio de mergulho (aço, lume e sombras): luneta de 60 min, índices de lume, janela de dia/data às 3h e bateria. Mostrador em 3 verdes e luneta preta ou verde (Personalizar)</sub>
+    </td>
+    <td align="center" width="33%">
       <img src="faces/forest-green/src/main/res/drawable-nodpi/preview.png" width="200" alt="Forest Green"><br>
       <b>Forest Green</b><br>
       <code>faces/forest-green</code><br>

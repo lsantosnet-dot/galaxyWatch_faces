@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Green Diver: Watch Face Format v2.
+  Analógico no estilo dos relógios de mergulho: luneta de 60 min, índices de lume,
+  janela de dia/data às 3h e bateria embaixo.
+  Tela lógica 450x450 (origem no canto superior esquerdo).
+
+  Imagens geradas por art/generate_images.py, em 2x (900 px) para ficarem nítidas;
+  aqui tudo continua em coordenadas de 450. Se mudar posições lá (janela, bateria,
+  tamanho dos ponteiros), atualize aqui também.
+
+  Fonte dos textos: Barlow Condensed Bold (res/font). Caixa de cada PartText:
+  altura = 1.2 x tamanho e y = topo_das_letras - 0.28 x tamanho.
+
+  Personalizar (no relógio ou no Galaxy Wearable): cor do mostrador e cor da luneta.
+-->
+<WatchFace width="450" height="450">
+    <Metadata key="CLOCK_TYPE" value="ANALOG" />
+    <Metadata key="PREVIEW_TIME" value="10:08:34" />
+
+    <UserConfigurations>
+        <ListConfiguration id="dial" displayName="@string/cfg_dial" defaultValue="floresta">
+            <ListOption id="floresta" displayName="@string/dial_floresta" />
+            <ListOption id="esmeralda" displayName="@string/dial_esmeralda" />
+            <ListOption id="oliva" displayName="@string/dial_oliva" />
+        </ListConfiguration>
+        <ListConfiguration id="bezel" displayName="@string/cfg_bezel" defaultValue="preta">
+            <ListOption id="preta" displayName="@string/bezel_preta" />
+            <ListOption id="verde" displayName="@string/bezel_verde" />
+        </ListConfiguration>
+    </UserConfigurations>
+
+    <Scene backgroundColor="#ff000000">
+
+        <!-- ======================= modo ativo (some no ambiente) ======================= -->
+        <Group name="ativo" x="0" y="0" width="450" height="450">
+            <Variant mode="AMBIENT" target="alpha" value="0" />
+
+            <!-- 1) Mostrador verde (cor escolhida pelo usuário) -->
+            <ListConfiguration id="dial">
+                <ListOption id="floresta">
+                    <PartImage x="0" y="0" width="450" height="450">
+                        <Image resource="dial_floresta" />
+                    </PartImage>
+                </ListOption>
+                <ListOption id="esmeralda">
+                    <PartImage x="0" y="0" width="450" height="450">
+                        <Image resource="dial_esmeralda" />
+                    </PartImage>
+                </ListOption>
+                <ListOption id="oliva">
+                    <PartImage x="0" y="0" width="450" height="450">
+                        <Image resource="dial_oliva" />
+                    </PartImage>
+                </ListOption>
+            </ListConfiguration>
+
+            <!-- 2) Luneta de 60 minutos (cor escolhida pelo usuário) -->
+            <ListConfiguration id="bezel">
+                <ListOption id="preta">
+                    <PartImage x="0" y="0" width="450" height="450">
+                        <Image resource="bezel_preta" />
+                    </PartImage>
+                </ListOption>
+                <ListOption id="verde">
+                    <PartImage x="0" y="0" width="450" height="450">
+                        <Image resource="bezel_verde" />
+                    </PartImage>
+                </ListOption>
+            </ListConfiguration>
+
+            <!-- 3) Índices, trilha de minutos, moldura da janela e textos fixos -->
+            <PartImage x="0" y="0" width="450" height="450">
+                <Image resource="markers" />
+            </PartImage>
+
+            <!-- 4) Janela às 3h, lado esquerdo: dia da semana (DOM em vermelho).
+                    [DAY_OF_WEEK] vai de 1 (domingo) a 7 (sábado). -->
+            <Condition>
+                <Expressions>
+                    <Expression name="d1">[DAY_OF_WEEK] == 1</Expression>
+                    <Expression name="d2">[DAY_OF_WEEK] == 2</Expression>
+                    <Expression name="d3">[DAY_OF_WEEK] == 3</Expression>
+                    <Expression name="d4">[DAY_OF_WEEK] == 4</Expression>
+                    <Expression name="d5">[DAY_OF_WEEK] == 5</Expression>
+                    <Expression name="d6">[DAY_OF_WEEK] == 6</Expression>
+                    <Expression name="d7">[DAY_OF_WEEK] == 7</Expression>
+                </Expressions>
+                <Compare expression="d1">
+                    <PartText x="300" y="210" width="52" height="28">
+                        <Text align="CENTER">
+                            <Font family="barlow_condensed_bold" size="23" color="#ffc8262a">
+                                <Template>DOM</Template>
+                            </Font>
+                        </Text>
+                    </PartText>
+                </Compare>
+                <Compare expression="d2">
+                    <PartText x="300" y="210" width="52" height="28">
+                        <Text align="CENTER">
+                            <Font family="barlow_condensed_bold" size="23" color="#ff151816">
+                                <Template>SEG</Template>
+                            </Font>
+                        </Text>
+                    </PartText>
+                </Compare>
+                <Compare expression="d3">
+                    <PartText x="300" y="210" width="52" height="28">
+                        <Text align="CENTER">
+                            <Font family="barlow_condensed_bold" size="23" color="#ff151816">
+                                <Template>TER</Template>
+                            </Font>
+                        </Text>
+                    </PartText>
+                </Compare>
+                <Compare expression="d4">
+                    <PartText x="300" y="210" width="52" height="28">
+                        <Text align="CENTER">
+                            <Font family="barlow_condensed_bold" size="23" color="#ff151816">
+                                <Template>QUA</Template>
+                            </Font>
+                        </Text>
+                    </PartText>
+                </Compare>
+                <Compare expression="d5">
+                    <PartText x="300" y="210" width="52" height="28">
+                        <Text align="CENTER">
+                            <Font family="barlow_condensed_bold" size="23" color="#ff151816">
+                                <Template>QUI</Template>
+                            </Font>
+                        </Text>
+                    </PartText>
+                </Compare>
+                <Compare expression="d6">
+                    <PartText x="300" y="210" width="52" height="28">
+                        <Text align="CENTER">
+                            <Font family="barlow_condensed_bold" size="23" color="#ff151816">
+                                <Template>SEX</Template>
+                            </Font>
+                        </Text>
+                    </PartText>
+                </Compare>
+                <Compare expression="d7">
+                    <PartText x="300" y="210" width="52" height="28">
+                        <Text align="CENTER">
+                            <Font family="barlow_condensed_bold" size="23" color="#ff151816">
+                                <Template>SÁB</Template>
+                            </Font>
+                        </Text>
+                    </PartText>
+                </Compare>
+            </Condition>
+
+            <!-- 5) Janela às 3h, lado direito: dia do mês -->
+            <PartText x="352" y="210" width="36" height="28">
+                <Text align="CENTER">
+                    <Font family="barlow_condensed_bold" size="23" color="#ff151816">
+                        <Template>%d<Parameter expression="[DAY]" /></Template>
+                    </Font>
+                </Text>
+            </PartText>
+
+            <!-- 6) Bateria, no lugar do "200m" dos relógios de mergulho:
+                    "BATERIA" termina em x=222 e o percentual (laranja) começa em x=227 -->
+            <PartText x="122" y="301" width="100" height="21">
+                <Text align="END">
+                    <Font family="barlow_condensed_bold" size="17" color="#ffeef2ea" letterSpacing="0.05">
+                        <Template>BATERIA</Template>
+                    </Font>
+                </Text>
+            </PartText>
+            <PartText x="227" y="301" width="100" height="21">
+                <Text align="START">
+                    <Font family="barlow_condensed_bold" size="17" color="#ffff6a3d">
+                        <Template>%d%%<Parameter expression="[BATTERY_PERCENT]" /></Template>
+                    </Font>
+                </Text>
+            </PartText>
+        </Group>
+
+        <!-- ================= modo ambiente: só o lume brilhando no preto ================= -->
+        <Group name="ambiente" x="0" y="0" width="450" height="450" alpha="0">
+            <Variant mode="AMBIENT" target="alpha" value="255" />
+            <PartImage x="0" y="0" width="450" height="450">
+                <Image resource="aod_markers" />
+            </PartImage>
+        </Group>
+
+        <!-- ================= sombras dos ponteiros =================
+             Mesmos ponteiros, só a sombra desfocada, deslocados 4 px para a direita
+             e 5 px para baixo. Como giram em volta do centro deslocado, a sombra cai
+             sempre para o mesmo lado (luz vindo de cima-esquerda). -->
+        <AnalogClock x="4" y="5" width="450" height="450">
+            <Variant mode="AMBIENT" target="alpha" value="0" />
+            <HourHand resource="hour_hand_shadow" x="203" y="115" width="44" height="138"
+                      pivotX="0.5" pivotY="0.7971" />
+            <MinuteHand resource="minute_hand_shadow" x="211" y="55" width="28" height="204"
+                        pivotX="0.5" pivotY="0.8333" />
+            <SecondHand resource="second_hand_shadow" x="212" y="49" width="26" height="218"
+                        pivotX="0.5" pivotY="0.8073">
+                <Sweep frequency="5" />
+            </SecondHand>
+        </AnalogClock>
+
+        <!-- ======================= ponteiros =======================
+             Cada imagem aponta para cima e gira em volta do pivô
+             (pivotY = onde fica o centro do relógio dentro da imagem, de 0 a 1). -->
+        <AnalogClock x="0" y="0" width="450" height="450">
+            <Variant mode="AMBIENT" target="alpha" value="0" />
+            <!-- hora (seta): imagem 44x138, pivô a 110px do topo -->
+            <HourHand resource="hour_hand" x="203" y="115" width="44" height="138"
+                      pivotX="0.5" pivotY="0.7971" />
+            <!-- minuto (espada): imagem 28x204, pivô a 170px do topo -->
+            <MinuteHand resource="minute_hand" x="211" y="55" width="28" height="204"
+                        pivotX="0.5" pivotY="0.8333" />
+            <!-- segundos (pirulito, ponta laranja): imagem 26x218, pivô a 176px do topo.
+                 Varredura suave, como um automático. -->
+            <SecondHand resource="second_hand" x="212" y="49" width="26" height="218"
+                        pivotX="0.5" pivotY="0.8073">
+                <Sweep frequency="5" />
+            </SecondHand>
+        </AnalogClock>
+
+        <!-- ponteiros do modo ambiente (contorno + lume), sem segundos -->
+        <AnalogClock x="0" y="0" width="450" height="450" alpha="0">
+            <Variant mode="AMBIENT" target="alpha" value="255" />
+            <HourHand resource="aod_hour_hand" x="203" y="115" width="44" height="138"
+                      pivotX="0.5" pivotY="0.7971" />
+            <MinuteHand resource="aod_minute_hand" x="211" y="55" width="28" height="204"
+                        pivotX="0.5" pivotY="0.8333" />
+        </AnalogClock>
+
+        <!-- reflexo suave do vidro, por cima de tudo (some no ambiente) -->
+        <PartImage x="0" y="0" width="450" height="450">
+            <Variant mode="AMBIENT" target="alpha" value="0" />
+            <Image resource="glass" />
+        </PartImage>
+
+        <!-- capa central do modo ambiente -->
+        <PartDraw x="0" y="0" width="450" height="450" alpha="0">
+            <Variant mode="AMBIENT" target="alpha" value="255" />
+            <Ellipse x="220" y="220" width="10" height="10">
+                <Stroke color="#ff7dffb0" thickness="1.6" />
+                <Fill color="#ff000000" />
+            </Ellipse>
+        </PartDraw>
+    </Scene>
+</WatchFace>
