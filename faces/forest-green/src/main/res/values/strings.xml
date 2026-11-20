@@ -1,0 +1,13 @@
+<resources>
+    <string name="watchface_name">Forest Green</string>
+    <string name="slot_weather">Complicação esquerda (clima)</string>
+
+    <string name="cfg_accent">Cor</string>
+    <string name="color_lime">Verde-limão</string>
+    <string name="color_mint">Menta</string>
+    <string name="color_yellow">Amarelo</string>
+    <string name="color_orange">Laranja</string>
+    <string name="color_cyan">Ciano</string>
+    <string name="color_white">Branco</string>
+
+</resources>

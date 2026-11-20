@@ -21,6 +21,12 @@ só XML + imagens — instalado direto no relógio via `adb`.
       <code>faces/orange-digital</code><br>
       <sub>Digital grande (horas brancas, minutos laranja), data, bateria e 3 complicações editáveis: clima (Samsung Weather), passos e batimentos</sub>
     </td>
+    <td align="center" width="33%">
+      <img src="faces/forest-green/src/main/res/drawable-nodpi/preview.png" width="200" alt="Forest Green"><br>
+      <b>Forest Green</b><br>
+      <code>faces/forest-green</code><br>
+      <sub>Analógico sobre folhagem verde, números grandes 12/3/6/9, clima (Samsung Weather), bateria, passos e arco da meta diária; cor de destaque editável</sub>
+    </td>
   </tr>
 </table>
 
