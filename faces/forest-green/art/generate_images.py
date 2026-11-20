@@ -155,7 +155,7 @@ def make_dial():
 
 # ------------------------------------------------------------------ ponteiros
 def make_hand(name, w, length, tail, base_w, tip_w, color):
-    """Ponteiro apontando para cima; pivô a `length` px do topo."""
+    """Ponteiro fino (segundos) apontando para cima; pivô a `length` px do topo."""
     img = Image.new("RGBA", (w * SS, (length + tail) * SS), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
     cx, py = w * SS / 2, length * SS
@@ -165,9 +165,36 @@ def make_hand(name, w, length, tail, base_w, tip_w, color):
     return save(img, name)
 
 
+def make_skeleton_hand(name, w, length, tail, body_w, wall, neck, stem_w, color):
+    """Ponteiro largo e VAZADO (com "orifício" no meio), apontando para cima.
+
+    De cima para baixo: ponta pontuda, corpo largo com um rasgo comprido no meio
+    (só as bordas de `wall` px ficam pintadas), e uma haste estreita de `neck` px
+    até o pivô (a `length` px do topo), que continua `tail` px abaixo dele.
+    """
+    img = Image.new("RGBA", (w * SS, (length + tail) * SS), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    cx, py = w * SS / 2, length * SS
+    hw = body_w * SS / 2
+    tip = body_w * 1.1 * SS                    # altura da ponta triangular
+    body_bottom = py - neck * SS
+    # corpo + ponta
+    d.polygon([(cx, 0), (cx + hw, tip), (cx + hw, body_bottom - hw),
+               (cx, body_bottom), (cx - hw, body_bottom - hw), (cx - hw, tip)], fill=color)
+    # haste até o pivô e rabicho
+    sw = stem_w * SS / 2
+    d.rectangle([cx - sw, body_bottom - hw, cx + sw, py + tail * SS], fill=color)
+    d.ellipse([cx - sw, py + tail * SS - 2 * sw, cx + sw, py + tail * SS], fill=color)
+    # orifício: rasgo arredondado no meio do corpo (transparente)
+    iw = hw - wall * SS
+    d.rounded_rectangle([cx - iw, tip + wall * SS * 0.6, cx + iw, body_bottom - hw - wall * SS * 0.4],
+                        radius=iw, fill=(0, 0, 0, 0))
+    return save(img, name)
+
+
 def make_hands():
-    make_hand("hour_hand.png", 12, 118, 16, 5, 3, WHITE)
-    make_hand("minute_hand.png", 12, 188, 18, 4.4, 2.4, WHITE)
+    make_skeleton_hand("hour_hand.png", 16, 118, 16, body_w=13, wall=3.2, neck=26, stem_w=5, color=WHITE)
+    make_skeleton_hand("minute_hand.png", 16, 188, 18, body_w=11, wall=2.9, neck=30, stem_w=4.5, color=WHITE)
     make_hand("second_hand.png", 12, 205, 34, 2.2, 1.6, (235, 235, 235, 255))
 
 
