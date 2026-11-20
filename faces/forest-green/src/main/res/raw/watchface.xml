@@ -2,7 +2,7 @@
 <!--
   Forest Green — Watch Face Format v2. Tela lógica 450x450 (origem no canto superior esquerdo).
 
-  Camadas: névoa verde (background) → arco decorativo fixo → marcações e números (dial)
+  Camadas: névoa verde + coroa (background) → filete da coroa → arco decorativo fixo → marcações e números (dial)
            → 4 complicações editáveis → ponteiros.
   As imagens e o preview.png saem de art/generate_images.py, que usa as MESMAS posições daqui.
 
@@ -28,11 +28,20 @@
 
     <Scene backgroundColor="#ff061810">
 
-        <!-- 1) Degradê verde-escuro com névoa. No modo ambiente some para economizar bateria. -->
+        <!-- 1) Degradê verde-escuro com névoa + coroa verde sólida na borda. No modo ambiente some para economizar bateria. -->
         <PartImage x="0" y="0" width="450" height="450">
             <Variant mode="AMBIENT" target="alpha" value="0" />
             <Image resource="background" />
         </PartImage>
+
+        <!-- 1b) Filete da coroa: círculo fino na cor de destaque, na borda interna do anel
+                 verde (raio 200, desenhado no background.png). Some no modo ambiente. -->
+        <PartDraw x="0" y="0" width="450" height="450">
+            <Variant mode="AMBIENT" target="alpha" value="0" />
+            <Ellipse x="25" y="25" width="400" height="400">
+                <Stroke color="[CONFIGURATION.accent.0]" thickness="2" />
+            </Ellipse>
+        </PartDraw>
 
         <!-- 2) Arco decorativo fixo e simétrico na parte de baixo: de 110° a 250°
                 (0° = 12h, sentido horário), passando pelo 6. Não mede nada.

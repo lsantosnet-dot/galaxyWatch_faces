@@ -5,7 +5,8 @@ Uso:  python3 faces/forest-green/art/generate_images.py
 Saída: faces/forest-green/src/main/res/drawable-nodpi/*.png
 
 Camadas (de baixo para cima, igual ao watchface.xml):
-  background.png  degradê verde-escuro com névoa (some no modo ambiente)
+  background.png  degradê verde-escuro com névoa + coroa verde sólida (some no modo ambiente)
+  (filete da coroa, na cor de destaque — PartDraw)
   (arco decorativo — desenhado pelo próprio relógio, PartDraw)
   dial.png        marcações + números 12/3/6/9 (ficam por cima do arco)
   4 complicações editáveis, ponteiros e preview.png
@@ -38,6 +39,11 @@ ACCENT = (139, 224, 74, 255)    # verde-limão padrão (#ff8be04a)
 ARC_R = 192                     # raio externo; no XML o Arc tem diâmetro 2*(192-5.5) = 373
 ARC_START, ARC_END = 110, 250   # graus, 0 = 12h, sentido horário; simétrico em volta do 6
 ARC_W = 11
+
+# Coroa (anel sólido na borda): verde-escuro fosco, de BEZEL_IN até a borda.
+# O filete na borda interna é desenhado pelo relógio (PartDraw) na cor de destaque.
+BEZEL_IN = 200
+BEZEL_COLOR = (14, 52, 30, 255)
 
 # 4 complicações: (centro x, topo). Caixa de 120x80 começando em (cx-60, topo).
 SLOTS = {
@@ -100,6 +106,16 @@ def make_background():
             r, g, b, a = px[x, y]
             n = rnd.randint(-1, 1)
             px[x, y] = (max(0, r + n), max(0, g + n), max(0, b + n), a)
+
+    # coroa: anel sólido verde-escuro (com anti-aliasing via supersampling)
+    s = SIZE * SS
+    ring = Image.new("L", (s, s), 0)
+    rd = ImageDraw.Draw(ring)
+    rd.ellipse([0, 0, s - 1, s - 1], fill=255)
+    rd.ellipse([(C - BEZEL_IN) * SS, (C - BEZEL_IN) * SS, (C + BEZEL_IN) * SS, (C + BEZEL_IN) * SS], fill=0)
+    bez = Image.new("RGBA", (SIZE, SIZE), BEZEL_COLOR)
+    bez.putalpha(ring.resize((SIZE, SIZE), Image.LANCZOS))
+    img.alpha_composite(bez)
 
     img.save(os.path.join(OUT, "background.png"), optimize=True)
     print("gerado background.png", img.size)
@@ -210,6 +226,11 @@ def make_preview(bg, dial):
         x, y = polar(ARC_R - ARC_W / 2 + 0.5, a)
         ad.ellipse([x - ARC_W * SS / 2, y - ARC_W * SS / 2, x + ARC_W * SS / 2, y + ARC_W * SS / 2], fill=ACCENT)
     big.alpha_composite(arc)
+
+    # filete da coroa (cor de destaque), centrado no raio BEZEL_IN, 2 px
+    ImageDraw.Draw(big).ellipse([(C - BEZEL_IN - 1) * SS, (C - BEZEL_IN - 1) * SS,
+                                 (C + BEZEL_IN + 1) * SS, (C + BEZEL_IN + 1) * SS],
+                                outline=ACCENT, width=2 * SS)
 
     big.alpha_composite(dial.resize(big.size, Image.BICUBIC))
     d = ImageDraw.Draw(big)

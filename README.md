@@ -25,7 +25,7 @@ só XML + imagens — instalado direto no relógio via `adb`.
       <img src="faces/forest-green/src/main/res/drawable-nodpi/preview.png" width="200" alt="Forest Green"><br>
       <b>Forest Green</b><br>
       <code>faces/forest-green</code><br>
-      <sub>Analógico sobre degradê verde com névoa, números grandes 12/3/6/9, arco decorativo e 4 complicações editáveis (padrão: clima, bateria, passos e batimentos); cor de destaque editável</sub>
+      <sub>Analógico sobre degradê verde com névoa e coroa verde sólida, números grandes 12/3/6/9, arco decorativo e 4 complicações editáveis (padrão: clima, bateria, passos e batimentos); cor de destaque editável</sub>
     </td>
   </tr>
 </table>
