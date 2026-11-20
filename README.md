@@ -35,6 +35,12 @@ só XML + imagens — instalado direto no relógio via `adb`.
       <code>faces/green-diver</code><br>
       <sub>Analógico realista estilo relógio de mergulho (aço, lume e sombras): luneta de 60 min, índices de lume, janela de dia/data às 3h e bateria. Mostrador em 3 verdes e luneta preta ou verde (Personalizar)</sub>
     </td>
+    <td align="center" width="33%">
+      <img src="faces/forest-green/src/main/res/drawable-nodpi/preview.png" width="200" alt="Forest Green"><br>
+      <b>Forest Green</b><br>
+      <code>faces/forest-green</code><br>
+      <sub>Analógico sobre degradê verde com névoa e coroa verde sólida, números grandes 12/3/6/9, arco decorativo e 4 complicações editáveis (padrão: clima, bateria, passos e batimentos); cor de destaque editável</sub>
+    </td>
   </tr>
 </table>
 
