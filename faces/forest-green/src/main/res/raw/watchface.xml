@@ -2,14 +2,14 @@
 <!--
   Forest Green — Watch Face Format v2. Tela lógica 450x450 (origem no canto superior esquerdo).
 
-  Camadas: folhagem (background) → arco da meta diária → marcações e números (dial)
-           → dados (clima, bateria, passos, meta) → ponteiros.
+  Camadas: névoa verde (background) → arco decorativo fixo → marcações e números (dial)
+           → 4 complicações editáveis → ponteiros.
   As imagens e o preview.png saem de art/generate_images.py, que usa as MESMAS posições daqui.
 
   Texto: cada PartText tem altura = 1.2 x tamanho da fonte e o texto fica centrado
   verticalmente na caixa (centro da caixa = centro das letras no preview).
 
-  Cor de destaque (arco, ícones, %): Personalizar > Cor. Use [CONFIGURATION.accent.0].
+  Cor de destaque (arco e ícones): Personalizar > Cor. Use [CONFIGURATION.accent.0].
 -->
 <WatchFace width="450" height="450">
     <Metadata key="CLOCK_TYPE" value="ANALOG" />
@@ -26,25 +26,20 @@
         </ColorConfiguration>
     </UserConfigurations>
 
-    <Scene backgroundColor="#ff081a10">
+    <Scene backgroundColor="#ff061810">
 
-        <!-- 1) Folhagem. No modo ambiente (tela sempre ligada) some para economizar bateria. -->
+        <!-- 1) Degradê verde-escuro com névoa. No modo ambiente some para economizar bateria. -->
         <PartImage x="0" y="0" width="450" height="450">
             <Variant mode="AMBIENT" target="alpha" value="0" />
             <Image resource="background" />
         </PartImage>
 
-        <!-- 2) Arco da meta diária de passos: de 8h (240°) até 4h (120°), passando pelo 6.
-                0° = 12h, sentido horário. O traço fica centrado no raio (373/2 = 186.5). -->
+        <!-- 2) Arco decorativo fixo e simétrico na parte de baixo: de 110° a 250°
+                (0° = 12h, sentido horário), passando pelo 6. Não mede nada.
+                O traço fica centrado no raio (373/2 = 186.5). -->
         <PartDraw x="0" y="0" width="450" height="450">
-            <Variant mode="AMBIENT" target="alpha" value="150" />
-            <!-- trilho -->
-            <Arc centerX="225" centerY="225" width="373" height="373" startAngle="120" endAngle="240">
-                <Stroke color="#32ffffff" thickness="11" cap="ROUND" />
-            </Arc>
-            <!-- progresso: cresce a partir das 8h conforme [STEP_PERCENT] (0..100) -->
-            <Arc centerX="225" centerY="225" width="373" height="373" startAngle="240" endAngle="240">
-                <Transform target="startAngle" value="240 - 1.2 * clamp([STEP_PERCENT], 0, 100)" />
+            <Variant mode="AMBIENT" target="alpha" value="110" />
+            <Arc centerX="225" centerY="225" width="373" height="373" startAngle="110" endAngle="250">
                 <Stroke color="[CONFIGURATION.accent.0]" thickness="11" cap="ROUND" />
             </Arc>
         </PartDraw>
@@ -54,29 +49,49 @@
             <Image resource="dial" />
         </PartImage>
 
-        <!-- 4) Clima (complicação editável). Padrão: Samsung Weather.
-                Linha 1: ícone + temperatura. Linha 2: condição/local (título). -->
-        <ComplicationSlot slotId="0" name="WEATHER" displayName="@string/slot_weather"
-                          supportedTypes="SHORT_TEXT"
-                          x="104" y="176" width="120" height="60">
+        <!-- 4) Quatro complicações editáveis (toque e segure > Personalizar, ou Galaxy Wearable).
+                Todas com o mesmo layout: ícone (cor de destaque), valor e título embaixo.
+                Padrões: clima (Samsung Weather), bateria, passos e batimentos. -->
+        <ComplicationSlot slotId="0" name="TOP_LEFT" displayName="@string/slot_top_left"
+                          supportedTypes="SHORT_TEXT RANGED_VALUE"
+                          x="95" y="148" width="120" height="80">
             <DefaultProviderPolicy
                 primaryProvider="com.samsung.android.watch.weather/com.samsung.android.watch.weather.complication.WeatherComplicationService"
                 primaryProviderType="SHORT_TEXT"
                 defaultSystemProvider="EMPTY"
                 defaultSystemProviderType="SHORT_TEXT" />
-            <BoundingBox x="0" y="0" width="120" height="60" />
+            <BoundingBox x="0" y="0" width="120" height="80" />
             <Complication type="SHORT_TEXT">
-                <PartImage x="0" y="2" width="26" height="26">
+                <PartImage x="48" y="0" width="24" height="24" tintColor="[CONFIGURATION.accent.0]">
                     <Image resource="[COMPLICATION.MONOCHROMATIC_IMAGE]" />
                 </PartImage>
-                <PartText x="32" y="0" width="88" height="31">
-                    <Text align="START">
+                <PartText x="0" y="27" width="120" height="31">
+                    <Text align="CENTER">
                         <Font family="SYNC_TO_DEVICE" size="26" weight="SEMI_BOLD" color="#ffffffff">
                             <Template>%s<Parameter expression="[COMPLICATION.TEXT]" /></Template>
                         </Font>
                     </Text>
                 </PartText>
-                <PartText x="0" y="34" width="120" height="21">
+                <PartText x="0" y="59" width="120" height="21">
+                    <Text align="CENTER">
+                        <Font family="SYNC_TO_DEVICE" size="17" weight="SEMI_BOLD" color="#ffffffff">
+                            <Template>%s<Parameter expression="[COMPLICATION.TITLE]" /></Template>
+                        </Font>
+                    </Text>
+                </PartText>
+            </Complication>
+            <Complication type="RANGED_VALUE">
+                <PartImage x="48" y="0" width="24" height="24" tintColor="[CONFIGURATION.accent.0]">
+                    <Image resource="[COMPLICATION.MONOCHROMATIC_IMAGE]" />
+                </PartImage>
+                <PartText x="0" y="27" width="120" height="31">
+                    <Text align="CENTER">
+                        <Font family="SYNC_TO_DEVICE" size="26" weight="SEMI_BOLD" color="#ffffffff">
+                            <Template>%s<Parameter expression="[COMPLICATION.TEXT]" /></Template>
+                        </Font>
+                    </Text>
+                </PartText>
+                <PartText x="0" y="59" width="120" height="21">
                     <Text align="CENTER">
                         <Font family="SYNC_TO_DEVICE" size="17" weight="SEMI_BOLD" color="#ffffffff">
                             <Template>%s<Parameter expression="[COMPLICATION.TITLE]" /></Template>
@@ -86,61 +101,145 @@
             </Complication>
         </ComplicationSlot>
 
-        <!-- 5) Bateria: contorno + nível (retângulo que cresce com o %) -->
-        <PartImage x="301" y="178" width="34" height="18" tintColor="[CONFIGURATION.accent.0]">
-            <Image resource="icon_battery" />
-        </PartImage>
-        <PartDraw x="0" y="0" width="450" height="450">
-            <Rectangle x="305" y="182" width="22" height="10">
-                <Transform target="width" value="0.22 * clamp([BATTERY_PERCENT], 0, 100)" />
-                <Fill color="[CONFIGURATION.accent.0]" />
-            </Rectangle>
-        </PartDraw>
-        <PartText x="258" y="202" width="120" height="31">
-            <Text align="CENTER">
-                <Font family="SYNC_TO_DEVICE" size="26" weight="SEMI_BOLD" color="#ffffffff">
-                    <Template>%d%%<Parameter expression="[BATTERY_PERCENT]" /></Template>
-                </Font>
-            </Text>
-        </PartText>
-        <PartText x="258" y="234" width="120" height="21">
-            <Text align="CENTER">
-                <Font family="SYNC_TO_DEVICE" size="17" weight="SEMI_BOLD" color="#ffffffff">Bateria</Font>
-            </Text>
-        </PartText>
+        <ComplicationSlot slotId="1" name="TOP_RIGHT" displayName="@string/slot_top_right"
+                          supportedTypes="SHORT_TEXT RANGED_VALUE"
+                          x="235" y="148" width="120" height="80">
+            <DefaultProviderPolicy defaultSystemProvider="WATCH_BATTERY"
+                                   defaultSystemProviderType="SHORT_TEXT" />
+            <BoundingBox x="0" y="0" width="120" height="80" />
+            <Complication type="SHORT_TEXT">
+                <PartImage x="48" y="0" width="24" height="24" tintColor="[CONFIGURATION.accent.0]">
+                    <Image resource="[COMPLICATION.MONOCHROMATIC_IMAGE]" />
+                </PartImage>
+                <PartText x="0" y="27" width="120" height="31">
+                    <Text align="CENTER">
+                        <Font family="SYNC_TO_DEVICE" size="26" weight="SEMI_BOLD" color="#ffffffff">
+                            <Template>%s<Parameter expression="[COMPLICATION.TEXT]" /></Template>
+                        </Font>
+                    </Text>
+                </PartText>
+                <PartText x="0" y="59" width="120" height="21">
+                    <Text align="CENTER">
+                        <Font family="SYNC_TO_DEVICE" size="17" weight="SEMI_BOLD" color="#ffffffff">
+                            <Template>%s<Parameter expression="[COMPLICATION.TITLE]" /></Template>
+                        </Font>
+                    </Text>
+                </PartText>
+            </Complication>
+            <Complication type="RANGED_VALUE">
+                <PartImage x="48" y="0" width="24" height="24" tintColor="[CONFIGURATION.accent.0]">
+                    <Image resource="[COMPLICATION.MONOCHROMATIC_IMAGE]" />
+                </PartImage>
+                <PartText x="0" y="27" width="120" height="31">
+                    <Text align="CENTER">
+                        <Font family="SYNC_TO_DEVICE" size="26" weight="SEMI_BOLD" color="#ffffffff">
+                            <Template>%s<Parameter expression="[COMPLICATION.TEXT]" /></Template>
+                        </Font>
+                    </Text>
+                </PartText>
+                <PartText x="0" y="59" width="120" height="21">
+                    <Text align="CENTER">
+                        <Font family="SYNC_TO_DEVICE" size="17" weight="SEMI_BOLD" color="#ffffffff">
+                            <Template>%s<Parameter expression="[COMPLICATION.TITLE]" /></Template>
+                        </Font>
+                    </Text>
+                </PartText>
+            </Complication>
+        </ComplicationSlot>
 
-        <!-- 6) Passos -->
-        <PartImage x="128" y="262" width="24" height="28" tintColor="[CONFIGURATION.accent.0]">
-            <Image resource="icon_walk" />
-        </PartImage>
-        <PartText x="70" y="294" width="140" height="31">
-            <Text align="CENTER">
-                <Font family="SYNC_TO_DEVICE" size="26" weight="SEMI_BOLD" color="#ffffffff">
-                    <Template>%d<Parameter expression="[STEP_COUNT]" /></Template>
-                </Font>
-            </Text>
-        </PartText>
-        <PartText x="70" y="326" width="140" height="21">
-            <Text align="CENTER">
-                <Font family="SYNC_TO_DEVICE" size="17" weight="SEMI_BOLD" color="#ffffffff">Passos</Font>
-            </Text>
-        </PartText>
+        <ComplicationSlot slotId="2" name="BOTTOM_LEFT" displayName="@string/slot_bottom_left"
+                          supportedTypes="SHORT_TEXT RANGED_VALUE"
+                          x="95" y="258" width="120" height="80">
+            <DefaultProviderPolicy defaultSystemProvider="STEP_COUNT"
+                                   defaultSystemProviderType="SHORT_TEXT" />
+            <BoundingBox x="0" y="0" width="120" height="80" />
+            <Complication type="SHORT_TEXT">
+                <PartImage x="48" y="0" width="24" height="24" tintColor="[CONFIGURATION.accent.0]">
+                    <Image resource="[COMPLICATION.MONOCHROMATIC_IMAGE]" />
+                </PartImage>
+                <PartText x="0" y="27" width="120" height="31">
+                    <Text align="CENTER">
+                        <Font family="SYNC_TO_DEVICE" size="26" weight="SEMI_BOLD" color="#ffffffff">
+                            <Template>%s<Parameter expression="[COMPLICATION.TEXT]" /></Template>
+                        </Font>
+                    </Text>
+                </PartText>
+                <PartText x="0" y="59" width="120" height="21">
+                    <Text align="CENTER">
+                        <Font family="SYNC_TO_DEVICE" size="17" weight="SEMI_BOLD" color="#ffffffff">
+                            <Template>%s<Parameter expression="[COMPLICATION.TITLE]" /></Template>
+                        </Font>
+                    </Text>
+                </PartText>
+            </Complication>
+            <Complication type="RANGED_VALUE">
+                <PartImage x="48" y="0" width="24" height="24" tintColor="[CONFIGURATION.accent.0]">
+                    <Image resource="[COMPLICATION.MONOCHROMATIC_IMAGE]" />
+                </PartImage>
+                <PartText x="0" y="27" width="120" height="31">
+                    <Text align="CENTER">
+                        <Font family="SYNC_TO_DEVICE" size="26" weight="SEMI_BOLD" color="#ffffffff">
+                            <Template>%s<Parameter expression="[COMPLICATION.TEXT]" /></Template>
+                        </Font>
+                    </Text>
+                </PartText>
+                <PartText x="0" y="59" width="120" height="21">
+                    <Text align="CENTER">
+                        <Font family="SYNC_TO_DEVICE" size="17" weight="SEMI_BOLD" color="#ffffffff">
+                            <Template>%s<Parameter expression="[COMPLICATION.TITLE]" /></Template>
+                        </Font>
+                    </Text>
+                </PartText>
+            </Complication>
+        </ComplicationSlot>
 
-        <!-- 7) Meta diária (% da meta de passos — a mesma do arco) -->
-        <PartText x="198" y="265" width="140" height="31">
-            <Text align="CENTER">
-                <Font family="SYNC_TO_DEVICE" size="26" weight="SEMI_BOLD" color="[CONFIGURATION.accent.0]">
-                    <Template>%d%%<Parameter expression="[STEP_PERCENT]" /></Template>
-                </Font>
-            </Text>
-        </PartText>
-        <PartText x="198" y="298" width="140" height="18">
-            <Text align="CENTER">
-                <Font family="SYNC_TO_DEVICE" size="15" weight="SEMI_BOLD" color="#ffffffff">META DIÁRIA</Font>
-            </Text>
-        </PartText>
+        <ComplicationSlot slotId="3" name="BOTTOM_RIGHT" displayName="@string/slot_bottom_right"
+                          supportedTypes="SHORT_TEXT RANGED_VALUE"
+                          x="235" y="258" width="120" height="80">
+            <DefaultProviderPolicy defaultSystemProvider="HEART_RATE"
+                                   defaultSystemProviderType="SHORT_TEXT" />
+            <BoundingBox x="0" y="0" width="120" height="80" />
+            <Complication type="SHORT_TEXT">
+                <PartImage x="48" y="0" width="24" height="24" tintColor="[CONFIGURATION.accent.0]">
+                    <Image resource="[COMPLICATION.MONOCHROMATIC_IMAGE]" />
+                </PartImage>
+                <PartText x="0" y="27" width="120" height="31">
+                    <Text align="CENTER">
+                        <Font family="SYNC_TO_DEVICE" size="26" weight="SEMI_BOLD" color="#ffffffff">
+                            <Template>%s<Parameter expression="[COMPLICATION.TEXT]" /></Template>
+                        </Font>
+                    </Text>
+                </PartText>
+                <PartText x="0" y="59" width="120" height="21">
+                    <Text align="CENTER">
+                        <Font family="SYNC_TO_DEVICE" size="17" weight="SEMI_BOLD" color="#ffffffff">
+                            <Template>%s<Parameter expression="[COMPLICATION.TITLE]" /></Template>
+                        </Font>
+                    </Text>
+                </PartText>
+            </Complication>
+            <Complication type="RANGED_VALUE">
+                <PartImage x="48" y="0" width="24" height="24" tintColor="[CONFIGURATION.accent.0]">
+                    <Image resource="[COMPLICATION.MONOCHROMATIC_IMAGE]" />
+                </PartImage>
+                <PartText x="0" y="27" width="120" height="31">
+                    <Text align="CENTER">
+                        <Font family="SYNC_TO_DEVICE" size="26" weight="SEMI_BOLD" color="#ffffffff">
+                            <Template>%s<Parameter expression="[COMPLICATION.TEXT]" /></Template>
+                        </Font>
+                    </Text>
+                </PartText>
+                <PartText x="0" y="59" width="120" height="21">
+                    <Text align="CENTER">
+                        <Font family="SYNC_TO_DEVICE" size="17" weight="SEMI_BOLD" color="#ffffffff">
+                            <Template>%s<Parameter expression="[COMPLICATION.TITLE]" /></Template>
+                        </Font>
+                    </Text>
+                </PartText>
+            </Complication>
+        </ComplicationSlot>
 
-        <!-- 8) Ponteiros brancos finos. Cada imagem aponta para cima e gira no pivô
+        <!-- 5) Ponteiros brancos finos. Cada imagem aponta para cima e gira no pivô
                 (pivotY = posição do centro do relógio dentro da imagem, de 0 a 1). -->
         <AnalogClock x="0" y="0" width="450" height="450">
             <!-- hora: 12x134, pivô a 118 px do topo -->
@@ -156,7 +255,7 @@
             </SecondHand>
         </AnalogClock>
 
-        <!-- 9) Capa central -->
+        <!-- 6) Capa central -->
         <PartDraw x="0" y="0" width="450" height="450">
             <Ellipse x="219" y="219" width="12" height="12">
                 <Fill color="#ffffffff" />

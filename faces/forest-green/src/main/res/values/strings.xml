@@ -1,6 +1,9 @@
 <resources>
     <string name="watchface_name">Forest Green</string>
-    <string name="slot_weather">Complicação esquerda (clima)</string>
+    <string name="slot_top_left">Superior esquerda</string>
+    <string name="slot_top_right">Superior direita</string>
+    <string name="slot_bottom_left">Inferior esquerda</string>
+    <string name="slot_bottom_right">Inferior direita</string>
 
     <string name="cfg_accent">Cor</string>
     <string name="color_lime">Verde-limão</string>
@@ -9,5 +12,4 @@
     <string name="color_orange">Laranja</string>
     <string name="color_cyan">Ciano</string>
     <string name="color_white">Branco</string>
-
 </resources>
